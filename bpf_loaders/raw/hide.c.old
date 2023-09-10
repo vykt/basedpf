@@ -1,0 +1,139 @@
+#include "hide.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdint.h>
+
+//#include <bpf/bpf.h>
+
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
+
+#include <linux/bpf.h>
+#include <linux/perf_event.h>
+#include <linux/hw_breakpoint.h>
+#include <linux/version.h>
+
+
+#define INSTRUCTION_COUNT 11
+#define INSTRUCTION_SIZE 8
+#define GETDENTS64_ID 845
+
+
+int main() {
+
+    int ret;
+    long int rret;
+
+    //allocate buffer for instructions
+    char * insns_buf = malloc(INSTRUCTION_COUNT * INSTRUCTION_SIZE);
+    if (insns_buf == NULL) { fprintf(stderr, "malloc error.\n"); return -1; }
+
+    //open object file
+    int insns_fd = open("./prog.o", O_RDONLY);
+    if (insns_fd == -1) { fprintf(stderr, "open error.\n"); return -1; }
+
+    //fill instruction buffer
+    if (read(insns_fd, insns_buf, INSTRUCTION_COUNT * INSTRUCTION_SIZE) == -1) { 
+        fprintf(stderr, "malloc error.\n"); return -1; }
+    close(insns_fd);
+
+
+    //TODO TODO TODO ALL THE THINGS THAT DONT WORK
+
+    //open performance event
+    int perf_fd;
+    struct perf_event_attr pe = {
+        .type = PERF_TYPE_TRACEPOINT,
+        .size = sizeof(struct perf_event_attr),
+        .config = 807,//TODO change back to GETDENTS64_ID,
+
+        .sample_period = 0,//1,
+        .sample_type = 0,//PERF_SAMPLE_RAW,
+        .wakeup_events = 1,
+
+        .disabled = 0,
+        //.bpf_event = 1
+    };
+
+    perf_fd = syscall(__NR_perf_event_open, &pe, -1, 0, -1, PERF_FLAG_FD_CLOEXEC);
+    if (perf_fd == -1) {
+        perror("perf_event_open");
+        return -1;
+    }
+
+
+    //load the bpf program
+    int prog_fd;
+    union bpf_attr load_attr;
+    memset(&load_attr, 0, sizeof(load_attr));
+    load_attr.prog_type = BPF_PROG_TYPE_TRACEPOINT;
+    load_attr.insn_cnt = INSTRUCTION_COUNT;
+    load_attr.insns = (__aligned_u64) insns_buf;
+    load_attr.license = "GPL";
+
+    prog_fd = syscall(__NR_bpf, BPF_PROG_LOAD, &load_attr, sizeof(load_attr));
+    if (prog_fd == -1) {
+        perror("bpf BPF_PROG_OPEN");
+        return -1;
+    }
+
+
+    //create bpf link(?)
+    int link_fd;
+    union bpf_attr link_attr;
+    memset(&link_attr, 0, sizeof(link_attr));
+    link_attr.link_create.prog_fd = prog_fd;
+    link_attr.link_create.target_fd = perf_fd;
+    link_attr.link_create.attach_type = BPF_PERF_EVENT;
+    link_attr.link_create.flags = 0;
+    //link_attr.link_create.perf_event = {bpf_cookies=0};
+    link_fd = syscall(__NR_bpf, BPF_LINK_CREATE, &link_attr, sizeof(link_attr));
+    if (link_fd == -1) {
+        perror("bpf BPF_LINK_CREATE");
+        return -1;
+    }
+ 
+    //enable tracepoint  
+    ret = ioctl(perf_fd, PERF_EVENT_IOC_ENABLE, 0);
+    if (ret == -1) {
+        perror("ioctl PERF_EVENT_IOC_ENABLE");
+        return -1;
+    }
+    //ret = ioctl(perf_fd, PERF_EVENT_IOC_SET_BPF, prog_fd);
+    //if (ret == -1) {
+    //    perror("ioctl PERF_EVENT_IOC_SET_BPF");
+    //    return -1;
+    //}
+
+
+    //TODO TODO TODO LISTEN FOR PRINTS
+
+    printf("load complete\n");
+    
+    //read printk's
+    int trace_fd;
+    trace_fd = open("/sys/kernel/debug/tracing/trace_pipe", O_RDONLY, 0);
+    if (trace_fd < 0) {
+        fprintf(stderr, "open trace pipe error.\n");
+        return -1;
+    }
+    
+    while(1) {
+    
+        static char buf[4096];
+        ssize_t sz;
+
+        sz = read(trace_fd, buf, sizeof(buf) - 1);
+        if (sz > 0) {
+            buf[sz] = 0;
+            puts(buf);
+        }
+
+    }
+
+    return 0;
+}
