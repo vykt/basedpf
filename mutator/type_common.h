@@ -4,6 +4,7 @@
 #include <cstdint>
 
 typedef uint8_t byte;
+typedef char sbyte; //eBPF doesn't (?) run on arch's where char != int8_t
 typedef struct _injection {
 
     int index; //instruction index of start of injection

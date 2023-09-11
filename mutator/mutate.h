@@ -10,6 +10,7 @@
 #include "type_common.h"
 #include "lc_rng.h"
 
+
 //struct for holding the eBPF program
 class ebpf_prog {
     
@@ -20,9 +21,11 @@ class ebpf_prog {
 
         int _insn_num;                 //number of instructions in insn_buf
         int _insn_avl;                 //space available for instructions
+        int _insn_usd;                 //number of instructions ultimately used
         struct ebpf_insn * _insn_buf;  //instruction buffer
 
-        std::mt19937 _rng;
+        std::mt19937 _rng;                      //rng engine
+        std::vector<injection> _mutate_metainf; //saved mutation metadata
 
         //methods
         inline bool can_mutate_insn(struct ebpf_insn * insn);
@@ -33,7 +36,9 @@ class ebpf_prog {
         
         //methods
         ebpf_prog(FILE * fs);
-        int apply_mutations;
-}
+        int apply_mutations();
+        int save_prog(FILE * fs);
+        int save_metainf(FILE * fs);
+};
 
 #endif

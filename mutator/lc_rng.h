@@ -31,6 +31,6 @@ class rng {
         //methods
         rng();
         inline int get_num(int lim = 0); 
-}
+};
 
 #endif

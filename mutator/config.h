@@ -14,12 +14,12 @@
 #define NOP_LEN 3
 
 
-byte nop_insn[NOP_LEN][sizeof(struct bpf_insn)] {
+sbyte nop_insn[NOP_LEN][sizeof(struct bpf_insn)] {
     {'\x07','\x03','\x00','\x00','\x00','\x00','\x00','\x00'}, //add64 r3, 0
     {'\xbf','\x22','\x00','\x00','\x00','\x00','\x00','\x00'}, //mov64 r2, r2
     {'\x17','\x04','\x00','\x00','\x00','\x00','\x00','\x00'}, //sub64 r4, 0
 
-}
+};
 
 
 #endif

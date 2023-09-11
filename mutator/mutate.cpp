@@ -60,6 +60,7 @@ ebpf_prog::ebpf_prog(FILE * fs) {
     //set class attributes
     _insn_num = obj_size / sizeof(struct bpf_insn);
     _insn_avl = buf_size / sizeof(struct bpf_insn);
+    _insn_usd = _insn_num;
 
     //initialise the rng
     std::random_device rd;
@@ -112,7 +113,6 @@ inline int ebpf_prog::fill_inject_buf(struct bpf_insn * buf, int size) {
 int ebpf_prog::apply_mutations() {
 
     //setup
-    int insn_lim = _insn_num;
     struct bpf_insn * cur_insn;
 
     //injection buffer
@@ -131,7 +131,7 @@ int ebpf_prog::apply_mutations() {
     struct bpf_insn * inject_end;
 
     //for every instruction
-    for (int i = 0; i < insn_lim; ++i) {
+    for (int i = 0; i < _insn_usd; ++i) {
 
         cur_insn = _insn_buf + i;
 
@@ -139,41 +139,74 @@ int ebpf_prog::apply_mutations() {
         if (!(this->can_mutate_insn(cur_insn)) 
             || !(_rng.get_num(INJECT_LIMIT) >= INJECT_THRES)) continue;
 
-        //get a buffer of instructions to inject
+        //get a buffer of instructions to inject & check for buffer overrun
         inject_num = (int) std::floor(rate_dist(_rng));
-        //TODO check inject_num doesnt overrun the buffer
+        
+        if ((_insn_usd + inject_num) >= _insn_avl) break;
+
         if ((inject_buf = std::malloc(sizeof(struct bpf_insn) * inject_num)) == NULL)
             return -1;
         if (fill_inject_buf(inject_buf, inject_num))
             return -1;
 
         //inject the instructions
-        std::memmove(_insn_buf+i+inject_num, _insn_buf+i, insn_lim - i);
+        std::memmove(_insn_buf+i+inject_num, _insn_buf+i, _insn_usd - i);
         std::memcpy(_insn_buf+i, inject_buf, inject_num);
-        insn_lim += inject_num;
+        _insn_usd += inject_num;
 
         //go through instructions again
         inject_end = cur_insn - 1 + inject_num;
-        for (int j = 0; i < insn_lim; ++j) {
+        for (int j = 0; i < _insn_usd; ++j) {
 
             fix_insn = _insn_buf + j;
 
             //skip if instruction doesn't need to be patched
             if (!(this->operates_on_reloff(fix_insn))) continue;
 
-            if (fix_insn + fix_insn->off <= inject_end;
+            if ((fix_insn + fix_insn->off <= inject_end) && fix_insn > inject_end)
+                fix_insn->off -= inject_num;
 
-
+            if ((fix_insn + fix_insn->off >= inject_end) && fix_insn < inject_end)
+                fix_insn->off += inject_num;
 
         } //end nested for
         
+        std::free(inject_buf);
+        _mutate_metainf.push_back({i, inject_num});
 
+    } //end for every instruction 
 
-    } //end for every instruction
+    return 0;
 }
 
 
+//save mutated binary, wrapper for std::fwrite()
+int bpf::save_prog(FILE * fs) {
 
+    size_t wr = 0;
+    
+    //write until done
+    do {
+        wr = std::fwrite(_insn_buf + i, sizeof(struct bpf_insn), _insn_usd - wr, fs);
+    } while (wr != 0);
+}
+
+
+//save mutation meta information, allows mutations to be reversed
+int bpf_prog::save_metainf(FILE * fs) {
+
+    //for every mutation
+    for (std::vector<injection>::iterator i = _mutate_metainf.begin(); 
+         i != _mutate_metainf.end(); ++i) {
+
+        //write metainf to file & catch incomplete writes
+        if (std::fwrite(&(i->index), sizeof(i->index), 1, fs) != sizeof(i->index))
+            return -1;
+        if (std::fwrite(&(i->index), sizeof(i->index), 1, fs) != sizeof(i->index))
+            return -1;
+    }
+    return 0;
+}
 
 
 
