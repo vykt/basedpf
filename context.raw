@@ -1,0 +1,96 @@
+OBJECTIVES
+
+-state of topic:
+    >theory
+    >practice
+
+-constraints on work
+-comparable projects
+-projects ideas borrowed from
+-le literature
+
+TODO
+
+-Diamorphine rootkit comparison
+
+
+REFERENCES
+
+X0 https://github.com/h3xduck/TripleCross
+X1 https://github.com/Gui774ume/ebpfkit
+X2 https://github.com/pathtofile/badbpf
+X3 https://github.com/vykt/libpwu
+X4 https://man7.org/linux/man-pages/man2/getdents.2.html
+X5 https://docs.kernel.org/filesystems/proc.html
+X6 https://abi-laboratory.pro/?view=timeline&l=linux
+X7 https://github.com/f0rb1dd3n/Reptile/blob/master/kernel/khook/engine.c
+X8 https://elixir.bootlin.com/linux/latest/source/include/linux/sched.h#L738
+X9 https://github.com/torvalds/linux/blob/master/Documentation/process/stable-api-nonsense.rst
+
+
+CONTENT
+
+ --- ebpf theory
+For the reader's convenience this paragraph will provide a short summary of eBPF capabilities before delving into their implications. eBPF programs operate as kernel function hooks; they may be attached to kprobes, tracepoints, sockets and other kernel functions. eBPF maps are data structures that reside in kernel memory and allow eBPF programs to communicate with userspace and to maintain state between execution instances. The eBPF verifier enforces a 1,000,000 instruction limit on eBPF programs - if it is deemed that an eBPF program may execute more than 1,000,000 instructions before returning, it will be rejected. Finally, eBPF bytecode is not turing-complete.
+
+The most sophisticated and comprehensive evaluation of offensive capabilities of eBPF can be found in "An analysis of offensive capabilities of eBPF and implementation of a rootkit" by M. S. Bajo (2022). The paper succinctly summarises a wide range of implementation details of eBPF, the Linux kernel, and the greater Linux environment through a security perspective. The paper showcases how eBPF helper functions can be used to achieve similar functionality to traditional rootkits like Diamorphine despite operating under stricter restrictions.
+
+[COMPARE TO DIAMORPHINE]
+
+One of the most important restrictions identified by M. S. Bajo is the inability for eBPF programs to arbitrarily read, write and execute kernel memory. The kernel attempts to place similar restrictions on the 'bpf_probe_write_user()' helper that attempts to write to arbitrary userspace memory. M. S. Bajo identifies that this helper will fail if attempting to write to virtual pages marked r-x, as is common with .text segments of ELF executables. M. S. Bajo concludes here that execution hijacking should be performed by hijacking execve calls or modifying the writeable .got (global offset table) section of ELF executables. This is only partially correct, as eBPF programs may be temporarily injected to hook syscalls of a target process and change them to call mprotect(), which can then add write permissions to .text segments. For a non-eBPF implementaion of this, see K. Nikanchyk's Libpwu (2023).
+
+Due to the many restrictions placed on eBPF, only a userspace mutator is feasible. Both M. S. Bajo's and K. Nikanchyk's methods of execution hijacking can allow the mutator to reside inside an existing process. For example, injected code may be registered as a signal handler, with the loader intentionally triggering exceptions in the target process to execute the mutator. All of this adds complexity and potential failure points. Consider unexpected process termination or updates changing the structure of the target process for example. This undermines the primary benefit of eBPF - reliability.
+
+M. S. Bajo's analysis of eBPF's offensive capabilities extends equally to defensive capabilities. As will be explored later in this document, bpf_override_return() and especially bpf_kprobe_user_write() can be used to modify syscall returns which can render userspace attempts at monitoring completely ineffective. In order to maximise reliability, componentns of the adversary system should be utilised as intended as much as possible. it is therefore likely more reasonable to make the mutator its own process and hide it with eBPF.
+
+This concludes the extent of academic literature focusing on eBPF's security capabilities. The majority of the research is focused on extending eBPF functionality or applying it in network filtering scenarios for which eBPF is more aptly suited.
+
+
+ --- ebpf practice
+There exist two sophisticated, holistic eBPF rootkit implementations. The first is the aforemention TripleCross rootkit developed by M. S. Bajo (X0). The other is ebpfkit, presented at BlackHat 2021 by G. Fournier, S. Afchain and S. Baubeau (X1). Implementations of individual rootkit features are more plentiful, with pathtofile's bad-bpf being a prominent example that was presented at DEFCON 29 [X2]. These implementations provide the practical counterpart to the theory covered in M. S. Bajo's work, with ebpfkit in particular often going further to implemenmt advanced capabilities beyond what is academically documented.
+
+pathtofile's PID concealing eBPF program is arguably the most broadly useful due to its multifaceted nature. It works by hooking the getdents64 system call and saving the buffer passed to the kernel in an eBPF map on syscall entry. On syscall exit, the buffer will be populated with linux_dirent64 structures (X4). The eBPF program will fetch the buffer and iterate through these structures until it encounters its target process ID located in the d_name field. The d_name field of the linux_dirent64 structure stores a variable length string, necessitating the use of the d_reclen field to store the total size of the structure, which varies from instance to instance. By extending the d_reclen field of the entry before the matching entry, it is possible to hide the matching entry. It is important to note that the hidden directory entries will still technically be present in the buffer, however software that processes these buffers, typically libc, will use d_reclen fields to determine the location of entries and will therefore skip the matching entry. Given libc is linked into every process on Linux for purposes like this, this project deems it sufficient.
+
+[DIAGRAM OF getdents64]
+
+Why exactly are linux_dirent64 structures used to hide processes? On Linux, process information is exposed via the proc pseudo filesystem (X5). Utilities like ps obtain a list of processes by iterating through the directory entries in /proc. What this ultimately means is pathtofile's PID concealing eBPF program can be utilised to hide both the loader and mutator processes as well as all rootkit related files on the filesystem. This document deems this a critical component; re-implementation and extension of this eBPF program will be covered further into the document.
+
+The remaining implementations have been observed for inspiration but have not been sampled directly. The remaining components will instead be designed from the ground up following fundamental eBPF principles.
+
+
+ --- ebpf reliability
+A brief contextualisation of eBPF reliability is due to justify the importance of this project. Software reliability is elegantly defined by H. & M. Phan as "the probability of failure-free operation of software for a specified period of time under specified conditions" (05). Phan & Phan's literature review identifies numerous software reliability models that may be applied to this project. Said models can be split into two categories. The first are deterministic models that trace execution flow and perform mathematical analysis on categorised instructions and data. The second are probabilistic models that apply mathematical models to the outcome of a fuzzing run.
+
+Very importantly, Phan & Phan's literary review states that all of the models work based off of assumptions (yes, so do all models, but the emphasis placed by the paper may be interpreted to mean that these assumptions are less 'reliable' than is typical). Given both the age of these models and the unique circumstances that this project operates in, namely a changing environment in the form of a changing kernel structure, it is very possible that these models may be unfit for purpose here. The researcher lacks the knowledge and time to find a model that is more appropriate for these circumstances.
+
+Difficulty of correctly utilising these models is also substantial. Probabilistic models require kernel fuzzing and application of advanced statistics which are by no means trivial tasks. Deterministic models are more sensitive to unexpected changes and are inherently not designed to handle random events like kernel structural changes (it's in the name!).
+
+Therefore while using one of these models proves too heavy a resource investment, it is believed that an architectural comparison between traditional rootkits and eBPF rootkits, together with an understanding of kernel architecture should sufficiently suggest that  eBPF improves reliability.
+
+To begin it is important to consider what precisely changes in the kernel across version upgrades or compile-time configuration changes. Linux kernel modules frequently rely on on symbols for API access. For example, the popular Reptile rootkit directly looks up symbol names (X7) of functions. Despite this, even across minor version upgrades around 100 symbols are removed from the kernel on average (X6). Rootkit authors frequently use work-arouns that utilise pointer arithmetic to more reliably gain access to function addresses. This is problematic since changes in sizes of kernel structures may cause this arithmetic to become wrong, especially if it is hardcoded. Consider for instance the infamous task structure (X7) and the various configuration options that extend it, as well as the various additions to it across kernel versions. The arguments taken by kernel APIs may of-course also change. Ultimately this is all the expected result of Linux's commitment to an unstable binary interface, as described by Linus Torvalds himself (X9).
+
+As mentioned in the introduction, eBPF helpers provide an interface that is stable across kernel configurations and is substantially more consistent across version upgrades. The fact that eBPF helper functions are part of the core kernel eliminates many use cases for pointer arithmetic and removes the need for resolving symbols. The stability of the eBPF interface also minimises kernel API incompatibility. It should be noted however that these unsafe practices can be reintroduced by using the eBPF helpers in unsafe ways, such as writing at hardcoded offsets into some structure with bpf_kprobe_write_user(), but this will be minimised throughout the project.
+
+Finally, it should be mentioned that as to be expected, the eBPF system is not bug free and bugs can cause substantial malfunction. The majority of security related issues are found in the verifier (00). While simply quantifying CVEs as done here isn't sufficient to reliably predict failure points, it does showcase that inducing kernel panic is still possible even when safe practices are followed. 
+
+
+[REFERENCE THE BOOK ON KERNEL PROGRAMMING, THE PART ON KERNEL MEMORY]
+
+
+ --- mutation
+Finally, this report will consider the current status of of machine code mutation as it is observed to operate in modern malware. C. Barria et al. carried out a comparison of malware obfuscation methods and in agreement with wider theory classifies mutations into three broad categories: oligomorphic, polymorphic and metamorphic (03).
+
+Before delving into the definitions of each class of mutations, it is important to note that mutation can occur in two ways: through encryption or/and through dead code injection (03). Encryption based mutations are primarily concerned with changing the appearance of the malware in encrypted form, typically through dynamic key generation at infection time. Decryptors are typically invoked by the malware at runtime to decrypt small segments of the executable prior to diverting executuon flow to said segments. Dead code injection on the other hand injects no-operation (NOP) instructions or even blocks of code into the program at arbitrary locations. The end result here is once again a different appearance of the executable.
+
+Returning now to obfuscation classifications - oligomorphic mutation presents the malware with a finite set of representations, typically defined by the malware author manually. Such mutations also typically operate on a subset of the binary. For example, oligomorphic malware may allow injection of dead code into the final 20% of its executable. There may be 10 different dead code blocks that can be injected, with each block being manually predefined by the malware author. This approach is highly undesirable as a signature can be created for each of the 10 possible final versions, which would completely defeat obfuscation measures.
+
+Polymorphic obfuscation makes use of infection-time dynamically generated encryption keys. Polymorphic malware encrypts itself with said encryption keys. At runtime, a small decryptor module allows only small parts of the binary to be decrypted at any one time, allowing execution to flow without revealing large parts of the code at once. Evaluation of this appraoch is unnecessary as writing decrypted instructions and proceeding to then execute them requires access to rwx kernel memory pages which are not available in eBPF (and neither is changing page permissions in general).
+
+Finally, metamorphic malware is capable of completely rewriting itself across instances. Metamorphic strategies range from simple re-arrangement of instructions that permit out-of-order execution to total recompilation of the malware sources using different compiler flags. Unlike polymorphic obfuscation, this approach is viable as all mutations can be carried out using the userspace mutator prior to loading the eBPF program.
+
+
+It is also important to consider the kind of countermeasures the proposed rootkit will be faced with. The focus so far has overwhelmingly been on signature based countermeasures . Such countermeasures typically calculate hashes of memory areas while applying different kinds of rulesets to them. For example, a known malware signature of 100 instructions may produce a specific hash. If it is known that no NOP instructions are present in this signature, hash calculations may skip NOP instructions when searching for this signature. This project operates within the kernel and scanning anywhere up to 500Mb of kernel memory via /dev/kmem with a wide range of rulesets isn't very efficient or practical. Integrating tools like ClamAV to scan eBPF programs at load time isn't done at all at the moment and would require a bespoke implementation [REFERENCE CLAM AV].
+
+Other countermeasures exist. S. K. Sahay & A. Sharma identify heuristic measures for identification (04). Such measures flag software exhibiting a set of behaviours expected of malware. Opening handles on processes and writing to .text segments of said processes may be one such set of behaviours. As stated by Sahay & Sharma, heuristic measures require virtualisation of a host-comparable environment where the malware may be allowed to execute to observe its behaviour. This is very resource intensive and inefficient, especially for systems that are likely to utilise eBPF for legitimate purposes, such as container orchestration machines. Additionally, conventional heuristics do not apply so simply to kernel code, let alone eBPF code. Given the typical heuristic approach of syscall tracing to derive behaviour, a rather novel approach would be required to apply heuristic measures to eBPF programs.
+
+One novel approach that seems to be effective is that of A. Ramaswamy (01). A. Ramaswamy proposes implementing control flow integrity for the kernel with the use of kprobes. Kprobes can be attached to any kernel function under a correct kernel configuration. When said kprobes execute, they can observe the call stack and catch any deviation from the expected control flow. Said deviations are caught by observing the return addresses stored on the stack and comparing them to the expected return addresses. eBPF rootkits are inherently weak to such detection systems as they must utilise CALL instructions to execute, while conventional rootkits may get away with using JMP instructions that do not leave a trace on the stack. As it stands, no clear countermeasures can be deployed against such detection systems. Their implementations however must be tailored to the specific kernel in use, which means adversaries without substantial resources likely will not be able to implement such countermeasures. This is made more likely by the fact that this report was not been able to identify any commercial, off-the-shelf instances of such countermeasures.

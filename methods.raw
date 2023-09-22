@@ -1,0 +1,215 @@
+OBJECTIVES
+
+-justify, discuss methods chosen IN LIGHT OF OBJECTIVES
+-report how it was done, NOT final product
+
+
+===part I : setting the scene
+>toolchain
+    =build eBPF
+        -BCC (llvm frontend), clang (llvm-bpf), gcc
+
+    =load eBPF
+        -libbpf, syscalls
+
+>mutation
+    =bytecode vs sourcecode mutation
+    
+>utilities
+    =ebpf-disasm
+
+
+===part II : implementation designs
+
+>hiding files & PIDs
+
+>mutation algorithm
+
+
+
+REFERENCES
+
+Y0 https://github.com/pathtofile/bad-bpf
+
+Y1 https://www.kernel.org/doc/html/v5.18/bpf/instruction-set.html
+
+Y2 https://elixir.bootlin.com/linux/v5.19.12/source/arch/x86/net/bpf_jit_comp.c
+
+Y3 https://github.com/mozillazg/hello-libbpfgo/blob/691030b64fa1a4942abd8be2a519e30cfcbb0164/27-attach-tracepoint-with-syscall/main.c
+
+Y4 https://book.rada.re/tools/rabin2/intro.html
+
+CONTENT
+
+ --- intro
+Before delving into the design of the proposed solution, it is necessary to discuss the toolchains that can be utilised to implement the proposed design. The available tools are very complex (alike eBPF itself) yet simultaneously rather inflexible and all emcompassing. It is vital to understand the restrictions the proposed solution must exist under before a design can be implemented.
+
+A remark: this projects designs and implements a system that mutates eBPF bytecode rather than sourcecode. This decision was taken for a very wide range of reasons that are summarised in the following list. Note that they will be explored more thoroughly in the implementation results discussion.
+
+1) Compiler unavailability. eBPF compilers are categorised as cross compilers across every major eBPF compiler implementation and Linux distribution. Distributions typically ship with only a native compiler. A common security hardening feature is to uninstall all available compilers, which is performed much more frequently on servers where eBPF is predominantly used. An argument could be made that a system utilising eBPF is more likely to contain an eBPF compiler, however as will soon be explored, not all eBPF toolchains require a compiler. This is especially true for toolchains targetting administrators rather than developers.
+
+2) Noise. It is only possible to ship a static version of a desired compiler due to the uncertainty of a target system. They take up a substantial amount of space which can't easily be concealed by a rootkit. While statfs may be utilised to retrieve disk usage, direct ioctl requests can be made which differ across drivers. Additionally, compilation of eBPF using libbpf takes seconds, which would be very noticeable on startup.
+
+
+
+
+ --- build system
+The userspace part of eBPF infrastructure consists predominantly of three separate components. There is first the eBPF backend, responsible for building eBPF programs from sourcecode into eBPF bytecode. The second component is the eBPF frontend which provides an interface to the backend build system. Finally, the third and last component is the loader, which passes the eBPF program to the kernel. As discussed previously, the eBPF verifier and bytecode-to-native JIT compiler both reside inside the kernel and are not part of userspace.
+
+Both the complexity of eBPF and the lack of maturity means that components often have bugs and incomplete features. Additionally, proper modularisation has arguably not been reached yet, with many components frequently taking on more than one role. This ultimately results in a lack of flexibility, which will be a major point of consideration in the design of our deployment system.
+
+ --- --- backend
+Two major (read: functioning) backends exist currently: the Low Level Virtual Machine (LLVM) backend and the GNU Compiler Collection (GCC) backend.
+
+[INSERT TABLE COMPARING LLVM VS GCC]
+
+For perceived reliability and maturity the LLVM backend was chosen for this project.
+
+
+ --- --- frontend
+Unlike the GCC which comes with only its terminal 'gcc' utility and its derivatives as a frontend, LLVM has two frontends for eBPF.
+
+BPF Compiler Collection (BCC) is an LLVM frontend that provides interface for eBPF for various languages. BCC programs define eBPF C sources as a string within the sources of the loader program. There are numerous problems with BCC for the use case of this project. For one, BCC does not support loading bytecode objects or loading Compile Once - Run Anywhere (CO-RE) enabled eBPF programs. This alone makes it completely unsuitable.
+
+Clang, the C language compiler, is the other available frontend. Unlike BCC, clang supports generation of both bytecode object files and Executable Linkable Format (ELF) files. This modularity is highly desirable as it allows this project to execute its mutation algorithm between the compilation and loading stages. Additionally, the fact that clang does not cover loading of eBPF programs means numerous loading approach can, and will, be explored. Clang compiles C code, which is the language of Linux so there is no alternatives there!
+
+ --- --- loader
+Loading of eBPF programs takes place using the bpf() system call. In addition to loading the eBPF programs into the kernel, eBPF programs must also be attached. Depending on the attachment type (kprobe, tracepoint, socket) the system calls involved differ. Utilisation of eBPF maps and CO-RE substantially complicates the process further, with BPF Type Format (BTF) and map file descriptor arrays needing loading into the kernel and the eBPF program respectively.
+
+A remark: It is worth noting here that BTF allows eBPF programs compiled on one kernel to be loaded on a different kernel reliably and safely. Utilising BTF is necessary to meet the goals of this project.
+
+To combat such complexity faced by the end users libbpf was developed. Libbpf takes care of the fine details involved in attaching and loading different kinds of eBPF programs. It also automates the loading of BTF information and the passing of map file descriptors. Unlike raw system calls however, libbpf uses specially sectioned ELF files. This introduces substantial complexity that will be explored later.
+
+Unlike the previous components, two separate designs were produced and partially implemented. One utilising raw syscalls, the other libbpf.
+
+
+ --- implementation approach
+Design and implementation of this project will follow the Agile methodology. With eBPF beng an emerging technology, the advantages provided by the Agile methodology are more desirable than those offered by alternative approaches. The presense of bugs in foundational software means total commitment to a certain implementation carries substantial risk of failure and almost guaranteed deviation from the initial design. The inexperience of the researcher with both eBPF and kernel development makes the more immediate feedback offered by constant prototyping desirable. Implementation of defensive capabilities is also an incremental process with no clear end goal, making an iterative development methodology like Agile once again more suitable. [INSERT WORK METHOD FIGURE] visualises the process.
+
+[WORK METHOD FIGURE]
+
+
+ --- holistic design
+Design begins by considering the holistic design of a hypothetical eBPF rootkit. We begin design by considering the userspace component of the project. To remind the reader, the userspace component is responsible for mutating and loading eBPF programs into the kernel. Due to the nature of eBPF programs as relatovely isolated code blocks deep inside the kernel, it is difficult to incorporate a definitive set of eBPF programs into the big picture design. The exact set of features required is also likely to vary substantially depending on how sophisticated the obfuscation measures the rootkit employs are. A decision has therefore been made to focus the holistic part of design on the userspace component only. eBPF programs will be treated as attachable modules to this userspace design without changing the core functionality of the system.
+
+The first iteration of the design can be seen in [1ST HOLISTIC DESIGN FIGURE]. The mutation module is responsible for modifying the eBPF program bytecode. The eBPF module is responsible for the loading and unloading of eBPF programs and maps, be it through libbpf or the raw syscall interface. Multiple reduntant components are included in the design. The first is the signal handler. The intention here is that the userspace system may set an alarm for itself via the alarm system call. The signal handler will then handle SIGALARM events, which will cause the userspace system to re-mutate eBPF programs and reload them into the kernel. This was ultimately decided to be pointless as it doesn't help with any known countermeasure systems while simultaneously exposing the userspace process during reloads and increasing complexity of the system.
+
+[INSERT 1ST HOLISTIC DESIGN FIGURE]
+
+The second iteration of the holistic design occured after many individual components were designed or even implemented. Nuances of certain components were better understood and certain closely synergetic components were merged [2ND HOLISTIC DESIGN FIGURE]. The most important change was the removal of all components relating to signal handling, as the idea of continuous mutation at runtime was dropped. The underlying members of the mutator module were merged, as both cave and NOP injection was found to be most efficiently implemented simultaneously. 
+
+While the above changes are best elaborated in their respective sections, one change worth mentioning here is the switch from using a bespoke linear congruential random number generator to using a Mersenne twister 19937 generator included as part of the C++ standard library. At the beginning of the project it was believed that minimising the number of system calls would assist in making the rootkit operate quietly. As the project went on, it became evident that a very high number of system calls are required for the operation of this rootkit regardless of the chosen method for random number generation. The researcher failed to find any sufficiently convincing evidence that accessing /dev/urandom gets flagged by security measures. Additionally, the standard library implementations of random number generators integrate into the gaussian distribution implementation in the C++ standard library. This substantially simplifies implementation. The random numbers produced by Mersenne twister are of much higher quality too, of course. 
+
+[INSERT 2ND HOLISTIC DESIGN FIGURE]
+
+
+ --- low level design
+
+ --- --- design eBPF mutator
+The reader may benefit from briefly consulting the eBPF instruction set documentation for this section: (Y1)
+
+Let us consider now the design of the eBPF mutator module. Conceptually the mutator's job is to ensure signature checks on the eBPF bytecode fail by modifying what the bytecode looks like. As discussed in the context section of this document, only oligamorphic and metamorphic mutation is feasible due to eBPF's inability to modify page permissions. Oligomorphic mutation's weaknesses are highly undesirable, while metamorphic mutation is very difficult to implement as it requires a firm grasp of compiler theory. 
+
+After some contemplation, a mutation algorithm was devised. The algorithm overcomes the biggest limitation of oligomorphic mutation - it does not use a finite set of predefined mutations. At the same time the algorithm does not change the underlying logic of the program making it not truly metamorphic.
+
+The algorithm works by injecting NOP instructions randomly throughout the program in places where doing so does not leave side effects. Injection of NOPs is performed in two stages:
+
+1) Caves (areas of empty memory) are injected into the bytecode by moving the remainder of the program forward by n bytes and fixing every relative offset to account for this change.
+
+2) Caves are filled with NOP instructions.
+
+[PSEUDOCODE MUTATE FIGURE] presents the pseudocode for this algorithm. It should be noted that eBPF has a substantial number of NOP instructions. With 10 general purpose registers (REFERENCE INSTRUCTION SET Y1), this report identifies 50 NOP instructions [INSERT NOPS FIGURE].
+
+[INSERT PSEUDOCODE MUTATE FIGURE]
+
+[INSERT NOPS FIGURE]
+
+It is vital to remember that eBPF bytecode undergoes JIT compilation at load time. This raises the question: what if the NOP instructions get optimised out? To answer this concern, the sourcecode of the eBPF JIT compiler was reviewed (REFERENCE SOURCECODE LINK FOR COMPILER Y2). Based on the sources, it is evident that this compilation does not perform optimisation and acts more akin to an eBPF-to-native lookup table. This means the injected NOPs will propagate and become native, executed instructions.
+
+
+ --- --- design eBPF loader
+Moving on to the most architecturally complicated module - the eBPF program loader. There are two methods for loading eBPF programs into the kernel, as was discussed briefly in the context section. Due to complications during implementation, both a libbpf and a raw system call module is designed.
+
+Before the details of each design are showcased it is important to outline precisely what is required of a loading system. The following steps must be taken in order: 
+
+1) The loader must load BPF Type Format (BTF) information into the kernel prior to loading the eBPF program.
+
+2) The loader must pass file descriptors for all eBPF maps the eBPF program intends to access.
+
+3) The loader must load the eBPF program into the kernel.
+
+4) The loader must attach the eBPF program to the target hook point.
+
+ --- --- --- libbpf loader
+The first approach considered is that of using libbpf. The above steps are automated in libbpf, which abstracts this process into a sequence of calls shown in [LIBBPF LOAD FIGURE]. As such, no design of loading itself is necessary beyond the simple flowchart of [LIBBPF LOAD FIGURE].
+
+[INSERT LIBBPF LOAD FIGURE]
+
+What does require design is the interface between the libbpf loader and the mutator module. As stated previously, the mutator module operates on blocks of eBPF instructions. This block needs space to expand to allow NOP instructions to be inserted. Libbpf operates on ELF files where each eBPF program resides in a separate section. Each section is tightly packed, meaning conventional ELF files do not provide the necessary space for expansion. 
+This tight packing is demonstrated in [FIGURE LIBBPF ELF SECTIONS], which shows the section headers of a typical libbpf ELF file and the disassembly of one of the two programs therein. The two eBPF programs in this ELF reside in sections indexed 3 and 5. The disassembly of the first program shows it consists of 21 instructions. Since eBPF instructions are 64bit, this results in 21 * 8 = 168 bytes being occupied by the eBPF program. Looking back at the section headers, we see that the first program (index 3) begins at offset 0x40, while the second program (index 5) begins at offset 0xe8. 232 (0xE8) - 64 (0x40) = 168. This means that section at index 3 is of size 168, and is filled entirely with the eBPF program bytecode with no spare space at the end.
+
+[INSERT FIGURE LIBBPF ELF SECTIONS]
+
+The reader may ask: why must the ELF be mutated? Is it not possible to extract the bytecode from the ELF and mutate it? The answer is no. Libbpf embeds eBPF ELFs inside the ELF of the loader. This means all mutation must either take place inside the embedded ELF (in memory), or a new ELF that satisfies libbpf must be constructed at runtime. Modifying the embedded ELF is of course much simpler. 
+
+To circumvent this limitation the ELFs can be modified to expand its sections. While dealing with the various affected offsets is challenging and beyond the skill level of the researcher at this time, the radare2 framework in theory (as we will soon see!) offers the rabin2 utility that can be used to automate ELF section resizing (Y4). 
+
+ --- --- --- syscall loader
+As stated previously, implementation complications resulted in two separate loader designs. We consider now a raw system call loader that does now use libbpf or eBPF ELF files. 
+
+Libbpf, ELF embedding and ELF modification are arguably needlessly complicated. The 
+
+
+
+
+
+
+
+
+
+ --- --- design eBPF program
+Design of specific components begins at the lowest layer of the rootkit - the eBPF programs. This section explore two methods that can be utilised to conceal the existence of the rootkit and the userspace process. 
+
+//---
+> bpf_probe_write_user cover
+> 
+> pid_file_hide
+//---
+
+ --- --- design of the bpf_probe_write_user cover
+
+When eBPF programs attempt to write to userspace memory via the crucially useful bpf_probe_write_user eBPF helper function the following message is put into the kernel message ringbuffer: "<name>[<PID>] is installing a program with bpf_probe_write_user helper that may corrupt user memory!". [NEAREST FIGURE] shows the output of running dmesg after bpf_proe_write_user is called by the 'hide' process. Note that 'process' refers to the process that loaded the eBPF program that calls bpf_probe_write_user.
+
+++
+[FIGURE FOR PROBE WRITE MEM SS]
+
+Accessing the kernel message ringbuffer is done via the syslog system call. This syscall expects a buffer and buffer length arguments to be passed to it. As such, the design in [SYSLOG DESIGN FIGURE]
+
+[INSERT SYSLOG DESIGN FIGURE]
+
+Upon entry into the syslog system call, the address of the buffer can be stored in an eBPF map, with the thread ID acting as the key. Upon exit from the system call, state can be restored by fetching the buffer pointer from the eBPF map. eBPF hash maps are best suited for this, as thread IDs can be used as the key for storing and fetching buffer pointers.
+
+
+ --- --- design of PID hider
+
+To recap from the brief description earlier in this document, utilities like 'ps' retrieve all process information from the procfs pseudo filesystem. Each process is listed as a directory under /proc, with its process ID as the directory name. Additional thread IDs may be present under /proc/<pid>/task if the process is multithreaded. With process listings acting as directory entries, both processes and files on disk can be hidden with the same method. The system call involved in retrieving directory entries is getdents64. It expects an empty buffer where linux_dirent64 structures for the target directory are stored. [linux_dirents64 FIGURE] showcases the definition of this structure.
+
+[INSERT linux_dirent64 FIGURE]
+
+pathtofile's aforementioned bad-bpf GitHub repository contains an implementation that is able to hide a single target file. [pathtofile FIGURE] is a flowchart showcasing how this implementation works conceptually.
+
+[INSERT pathtofile FIGURE]
+
+pathtofile's implementation alone is not sufficient because it is only capable of hiding a single directory entry, be it a process ID or any other entry in the filesystem. An eBPF rootkit designed in this project would need to hide:
+
+    -Its userspace PID.
+    
+    -Loader and mutator executables stored on the filesystem.
+
+    -eBPF object files, if loading is performed using system calls and not libbpf.
+
+Simulatenously, it is only possible to attach a single eBPF program to the entry or exit from a system call. Additionally, PIDs change with every execution meaning the target PID must be dynamically set at load time. pathtofile's implementation must be substantially extended to meet these new requirements. An updated version of this design can be seen in [pathtofile UPDATED FIGURE].
+
+[INSERT pathtofile UPDATED FIGURE]
+
+
