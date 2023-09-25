@@ -124,7 +124,9 @@ The algorithm works by injecting NOP instructions randomly throughout the progra
 
 [INSERT NOPS FIGURE]
 
-It is vital to remember that eBPF bytecode undergoes JIT compilation at load time. This raises the question: what if the NOP instructions get optimised out? To answer this concern, the sourcecode of the eBPF JIT compiler was reviewed (REFERENCE SOURCECODE LINK FOR COMPILER Y2). Based on the sources, it is evident that this compilation does not perform optimisation and acts more akin to an eBPF-to-native lookup table. This means the injected NOPs will propagate and become native, executed instructions.
+The algorithm runs in polynomial time with a complexity of O(n^2), where n is a single instruction of the mutated eBPF program. This complexity is caused by the presence of a for loop nested within another for loop.
+
+It is also vital to remember that eBPF bytecode undergoes JIT compilation at load time. This raises the question: what if the NOP instructions get optimised out? To answer this concern, the sourcecode of the eBPF JIT compiler was reviewed (REFERENCE SOURCECODE LINK FOR COMPILER Y2). Based on the sources, it is evident that this compilation does not perform optimisation and acts more akin to an eBPF-to-native lookup table. This means the injected NOPs will propagate and become native, executed instructions.
 
 
  --- --- design eBPF loader
@@ -155,42 +157,16 @@ The reader may ask: why must the ELF be mutated? Is it not possible to extract t
 To circumvent this limitation the ELFs can be modified to expand its sections. While dealing with the various affected offsets is challenging and beyond the skill level of the researcher at this time, the radare2 framework in theory (as we will soon see!) offers the rabin2 utility that can be used to automate ELF section resizing (Y4). 
 
  --- --- --- syscall loader
-As stated previously, implementation complications resulted in two separate loader designs. We consider now a raw system call loader that does now use libbpf or eBPF ELF files. 
+As stated previously, implementation complications resulted in two separate loader designs. We consider now a raw system call loader that does now use libbpf or eBPF ELF files. Libbpf, ELF embedding and ELF modification are all arguably needlessly complicated. A much simpler method is to use syscalls directly as, unlike libbpf, they do operate on eBPF bytecode alone.
 
-Libbpf, ELF embedding and ELF modification are arguably needlessly complicated. The 
+The libbpf loader must itself interface with the syscall interface. As such, a syscall trace of it can be performed to supplement eBPF documentation. The syscall trace for a simple hello world eBPF program libbpf loader can be found in [INSERT APPENDIX ENTRY FOR STRACE]. While the system calls are numerous, the important ones have been summarised in [FIGURE FOR STRACE]. All a raw system call loader must do is carry out these system calls, tailoring them to the maps and attachment types suitable for the eBPF programs that the rootkit will utilise. As these will be known ahead of time, this should not prove challenging.
 
-
-
-
+[INSERT FIGURE FOR STRACE]
 
 
+--- --- design eBPF program
+Finally, design arrives at the lowest layer of the rootkit - the eBPF programs. Due to time constraints, only a single pair of programs was designed. This project deemed it low on the priority list as existing malicious implementations of eBPF capabilities exist (REFERENCE TripleCross, bad-bpf), and eBPF's standalone nature means additional capabilites can rather easily be developed independently to extend the work done in this project. Having said so, the pair of programs designed here substantially improve on the existing implementations. The project also deems it important to mention an additional obfuscation measure that is vitally important. It will be measured at the end of this section. 
 
-
-
- --- --- design eBPF program
-Design of specific components begins at the lowest layer of the rootkit - the eBPF programs. This section explore two methods that can be utilised to conceal the existence of the rootkit and the userspace process. 
-
-//---
-> bpf_probe_write_user cover
-> 
-> pid_file_hide
-//---
-
- --- --- design of the bpf_probe_write_user cover
-
-When eBPF programs attempt to write to userspace memory via the crucially useful bpf_probe_write_user eBPF helper function the following message is put into the kernel message ringbuffer: "<name>[<PID>] is installing a program with bpf_probe_write_user helper that may corrupt user memory!". [NEAREST FIGURE] shows the output of running dmesg after bpf_proe_write_user is called by the 'hide' process. Note that 'process' refers to the process that loaded the eBPF program that calls bpf_probe_write_user.
-
-++
-[FIGURE FOR PROBE WRITE MEM SS]
-
-Accessing the kernel message ringbuffer is done via the syslog system call. This syscall expects a buffer and buffer length arguments to be passed to it. As such, the design in [SYSLOG DESIGN FIGURE]
-
-[INSERT SYSLOG DESIGN FIGURE]
-
-Upon entry into the syslog system call, the address of the buffer can be stored in an eBPF map, with the thread ID acting as the key. Upon exit from the system call, state can be restored by fetching the buffer pointer from the eBPF map. eBPF hash maps are best suited for this, as thread IDs can be used as the key for storing and fetching buffer pointers.
-
-
- --- --- design of PID hider
 
 To recap from the brief description earlier in this document, utilities like 'ps' retrieve all process information from the procfs pseudo filesystem. Each process is listed as a directory under /proc, with its process ID as the directory name. Additional thread IDs may be present under /proc/<pid>/task if the process is multithreaded. With process listings acting as directory entries, both processes and files on disk can be hidden with the same method. The system call involved in retrieving directory entries is getdents64. It expects an empty buffer where linux_dirent64 structures for the target directory are stored. [linux_dirents64 FIGURE] showcases the definition of this structure.
 
@@ -200,7 +176,7 @@ pathtofile's aforementioned bad-bpf GitHub repository contains an implementation
 
 [INSERT pathtofile FIGURE]
 
-pathtofile's implementation alone is not sufficient because it is only capable of hiding a single directory entry, be it a process ID or any other entry in the filesystem. An eBPF rootkit designed in this project would need to hide:
+pathtofile's implementation alone is not sufficient because it is only capable of hiding a single directory entry, be it a process ID or any other entry in the filesystem. An eBPF rootkit would need to hide all of the following simultaneously:
 
     -Its userspace PID.
     
@@ -208,8 +184,15 @@ pathtofile's implementation alone is not sufficient because it is only capable o
 
     -eBPF object files, if loading is performed using system calls and not libbpf.
 
-Simulatenously, it is only possible to attach a single eBPF program to the entry or exit from a system call. Additionally, PIDs change with every execution meaning the target PID must be dynamically set at load time. pathtofile's implementation must be substantially extended to meet these new requirements. An updated version of this design can be seen in [pathtofile UPDATED FIGURE].
+It is only possible to attach a single eBPF program to the entry or exit from a system call. Additionally, PIDs change with every execution meaning the target PID must be dynamically set at load time. pathtofile's implementation must be substantially extended to meet these new requirements. An updated version of this design can be seen in [pathtofile UPDATED FIGURE].
 
 [INSERT pathtofile UPDATED FIGURE]
 
 
+ --- --- design of the bpf_probe_write_user cover
+
+Finally, this report will outline an additional obfuscation measure that is necessary since it leaves such a glaring weakness. This obfuscation measure is necessary specifically for eBPF rootkits, so this project deems it necessary to mention. 
+
+When eBPF programs attempt to write to userspace memory via the crucially useful bpf_probe_write_user eBPF helper function the following message is put into the kernel message ringbuffer: "<name>[<PID>] is installing a program with bpf_probe_write_user helper that may corrupt user memory!". [NEAREST FIGURE] shows the output of running dmesg after bpf_proe_write_user is called by the 'hide' process. Note that 'process' refers to the process that loaded the eBPF program that calls bpf_probe_write_user. This may be counteracted by hooking the syslog system call and overwriting parts of its buffer, as is done with the PID hider eBPF program designed earlier.
+
+[FIGURE FOR PROBE WRITE MEM SS]

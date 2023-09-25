@@ -1,0 +1,30 @@
+     0:  mov64	r6,	r1
+     1:  call	0xe
+     2:  mov64	r2,	r2
+     3:  stxdw	[r10-0x8],	r0
+     4:  add64	r3,	0x0
+     5:  ldxdw	r1,	[r6+0x18]
+     6:  stxdw	[r10-0x10],	r1
+     7:  jne	r1,	0x0,	+0x6	(jump to 13)
+     8:  lddw	r1,	0x0
+    10:  add64	r3,	0x0
+    11:  mov64	r2,	0x30
+    12:  call	0x6
+    13:  ja	+0xd	(jump to 26)
+    14:  add64	r3,	0x0
+    15:  mov64	r2,	r10
+    16:  add64	r2,	0xfffffff8
+    17:  mov64	r3,	r10
+    18:  add64	r3,	0xfffffff0
+    19:  mov64	r2,	r2
+    20:  sub64	r4,	0x0
+    21:  lddw	r1,	0x0
+    23:  add64	r3,	0x0
+    24:  sub64	r4,	0x0
+    25:  mov64	r4,	0x0
+    26:  call	0x2
+    27:  add64	r3,	0x0
+    28:  mov64	r2,	r2
+    29:  sub64	r4,	0x0
+    30:  mov64	r0,	0x0
+    31:  exit

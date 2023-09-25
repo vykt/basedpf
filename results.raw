@@ -1,0 +1,64 @@
+OBJECTIVES
+
+-recall objectives
+-pass tests?
+
+
+
+CONTENT
+
+ --- intro
+The results section of the report is broken down into the three main components that underwent implementation:
+
+-The mutator
+
+-The eBPF program
+
+-The eBPF loader
+
+Fore each of the three components, implemenetation details and nuances will be briefly discussed. Tests suitable for the objectives defined in the introduction will also be covered on a per-component basis.
+
+
+ --- mutator
+The sourcecode for the mutator implementation can be found in [SOURCECODE APPENDIX]. The implementation for the most part follows the design defined in the methods section. The most important difference is in the implementation of the main mutation algorithm. The original algorithm did not detail the process of random number generation and how it would affect the algorithm. It became evident during implementation that a method to evenly distribute the NOP instructions throughout the program in an efficient manner was necessary.
+
+The devised solution utilised a Gaussian distribution. Every time the algorithm decides to inject NOPs at a given instruction, the number of instructions injected is a random numer distributed on this Gaussian distribution. The mean of the distribution is calculated by taking into account the user-defined rate of injection, as well as the available mutation space. For example, if the algorithm is configured to inject on average at every second instruction, and the program is allowed to double in size, the mean of the distribution will be 2.0. The full formula for the mean is seen below:
+
+    a = available space for the program, measured in instructions
+    b = number of instructions in the original program
+    c = first user-defined injection rate ratio value
+    d = second user-defined injection rate ratio value
+
+    mean = ((a/b) - 1) * (d / (d - c))
+
+The standard deviation of the distribution is defined as the square root of the mean. Injection is possible at approximately 90-95% of the instructions, depending on the specific program. This effectively means that the vast majority of the time, the algorithm does not run out of instructions before reaching the end of the file. Distribution of NOPs is possible in only a single pass through the program. There are other advantages, but alas we must move on.
+
+Only 3 of the 50 NOP instructions are utilised by the mutator. Adding additional NOPs to the program is trivial, so the researcher chose to prioritise the more critical parts of the implementation.
+
+Finally, the mutator generates an addition meta information file that stores information about all injections that took place. The file uses a simple binary format. Entries follow each other with no padding with the following format:
+
+    <x,y><x,y><x,y>
+
+Where x is the instruction index of the injection, and y is the number of injected instructions. In theory this can be used to reverse the mutation, producing the original binary. Should the rootkit choose to store itself in an unencrypted format, storing mutated binaries only in tandem with these meta information files can be used as an obfuscation measure.
+
+
+Before we begin testing, it must be mentioned that due to the incomplete implementation of the eBPF loader, it is not possible to load the mutated bytecode. Nontheless, ebpf-disasm throws errors upon encountering invalid instructions. As such, at the bare minimum it can be known with certainty that the mutated bytecode is not corrupted. By observing the disassembled bytecode it can be presumed that will execute correctly, but that is not sufficient proof of course.
+
+We will now consider each relevant objective and apply the tests necessary for their satisfaction. Where deemed necessary, additional tests are performed. Evaluation will be based on [APPENDIX MUTATED 1 & 2]. [APPENDIX MUTATED 1] showcases the disassembly of the 2 original eBPF programs implemented by this project. [APPENDIX MUTATED 2] showcases the disassembly of mutated instances of both of these programs.
+
+1) Functional native instructions:
+
+The researcher has sufficient reason to believe the instructions are valid. The researcher manually disassembled the mutated programs using hexdumps. Highlights of one such instance can be seen in (FIGURE DISASM MUTATION). Additionally, the fact that ebpf-disasm disassembles the mutated programs without error adds some third-party validity to te process. Additionally, updating offsets is performed correctly. This is perhaps as close to a proof as the researcher is able to get without a working loader.
+
+(INSERT FIGURE OF DISASSEMBLY OF MUTATIONS)
+
+The reader is encouraged to try mutating and disassembling the eBPF programs implemented by this project. The process for doing so can be found in [MUTATION HOWTO APPENDIX].
+
+
+2) Native instructions that vary enough to make conventional signatures ineffective:
+
+With only 3 NOP instructions the randomness leaves much to be desired, however any practical implementation could very easily extend the NOP array to include all 50 NOP instructions. Paired with the use of a Gaussian distribution the randomness produced would be excellent.
+
+
+
+ --- eBPF programs

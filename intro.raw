@@ -58,7 +58,7 @@ This project will aim to explore the viability of bytecode mutation of eBPF prog
          Can they be practically implemented?
 
         -Is the deployment system realistic? Is it too cumbersome to be used 
-         in practice? Is this system avoid needless complexity?
+         in practice? Is this system devoid of needless complexity?
 
         -Does the implementation of critical components function correctly?
 

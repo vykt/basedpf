@@ -1,0 +1,284 @@
+     0:  sub64	r4,	0x0
+     1:  mov64	r2,	r2
+     2:  mov64	r6,	r1
+     3:  call	0xe
+     4:  stxdw	[r10-0x8],	r0
+     5:  mov64	r7,	0x0
+     6:  mov64	r2,	r2
+     7:  add64	r3,	0x0
+     8:  ldxdw	r6,	[r6+0x10]
+     9:  jeq	r6,	0x0,	+0x115	(jump to 286)
+    10:  add64	r3,	0x0
+    11:  add64	r3,	0x0
+    12:  mov64	r2,	r10
+    13:  sub64	r4,	0x0
+    14:  mov64	r2,	r2
+    15:  sub64	r4,	0x0
+    16:  add64	r2,	0xfffffff8
+    17:  sub64	r4,	0x0
+    18:  add64	r3,	0x0
+    19:  mov64	r2,	r2
+    20:  lddw	r1,	0x0
+    22:  call	0x1
+    23:  sub64	r4,	0x0
+    24:  add64	r3,	0x0
+    25:  stxdw	[r10-0x50],	r0
+    26:  jeq	r0,	0x0,	+0x104	(jump to 286)
+    27:  mov64	r2,	0x0
+    28:  stxh	[r10-0xa],	r2
+    29:  mov64	r2,	r2
+    30:  add64	r3,	0x0
+    31:  stxh	[r10-0xc],	r2
+    32:  stxh	[r10-0xe],	r2
+    33:  sub64	r4,	0x0
+    34:  stxw	[r10-0x14],	r2
+    35:  mov64	r2,	r2
+    36:  sub64	r4,	0x0
+    37:  sub64	r4,	0x0
+    38:  mov64	r8,	0x0
+    39:  mov64	r2,	r2
+    40:  mov64	r2,	r2
+    41:  sub64	r4,	0x0
+    42:  add64	r3,	0x0
+    43:  mov64	r4,	0x0
+    44:  add64	r3,	0x0
+    45:  mov64	r3,	r4
+    46:  sub64	r4,	0x0
+    47:  add64	r3,	0x0
+    48:  stxdw	[r10-0x70],	r6
+    49:  ja	+0xba	(jump to 235)
+    50:  lsh64	r7,	0x20
+    51:  mov64	r2,	r2
+    52:  rsh64	r7,	0x20
+    53:  jeq	r7,	0x7,	+0x1	(jump to 54)
+    54:  jne	r7,	0x0,	+0xe4	(jump to 282)
+    55:  add64	r3,	0x0
+    56:  mov64	r2,	r2
+    57:  add64	r6,	0x1
+    58:  add64	r3,	0x0
+    59:  mov64	r1,	r6
+    60:  lsh64	r1,	0x20
+    61:  rsh64	r1,	0x20
+    62:  jne	r1,	0x2,	+0x1e	(jump to 92)
+    63:  mov64	r2,	r2
+    64:  ldxh	r1,	[r10-0xa]
+    65:  ldxdw	r3,	[r10-0x48]
+    66:  add64	r3,	0x0
+    67:  add64	r3,	r1
+    68:  sub64	r4,	0x0
+    69:  add64	r3,	0x0
+    70:  ldxdw	r2,	[r10-0x60]
+    71:  add64	r2,	0x1
+    72:  mov64	r2,	r2
+    73:  mov64	r2,	r2
+    74:  mov64	r1,	r2
+    75:  add64	r3,	0x0
+    76:  lsh64	r1,	0x20
+    77:  rsh64	r1,	0x20
+    78:  ldxdw	r8,	[r10-0x68]
+    79:  add64	r3,	0x0
+    80:  mov64	r4,	r3
+    81:  sub64	r4,	0x0
+    82:  ldxdw	r6,	[r10-0x70]
+    83:  jne	r1,	0x40,	+0x98	(jump to 235)
+    84:  mov64	r2,	r10
+    85:  mov64	r2,	r2
+    86:  add64	r2,	0xfffffff8
+    87:  lddw	r1,	0x0
+    89:  add64	r3,	0x0
+    90:  call	0x3
+    91:  add64	r3,	0x0
+    92:  sub64	r4,	0x0
+    93:  add64	r3,	0x0
+    94:  mov64	r7,	0x0
+    95:  ja	+0xbf	(jump to 286)
+    96:  stxw	[r10-0x14],	r6
+    97:  mov64	r2,	r10
+    98:  add64	r2,	0xffffffec
+    99:  lddw	r1,	0x0
+   101:  call	0x1
+   102:  add64	r3,	0x0
+   103:  sub64	r4,	0x0
+   104:  mov64	r7,	0x1
+   105:  jeq	r0,	0x0,	-0x38	(jump to 49)
+   106:  mov64	r8,	r0
+   107:  add64	r3,	0x0
+   108:  mov64	r7,	0x0
+   109:  sub64	r4,	0x0
+   110:  ldxh	r1,	[r8+0x0]
+   111:  mov64	r2,	r2
+   112:  mov64	r9,	0x0
+   113:  jeq	r1,	0x0,	+0x20	(jump to 145)
+   114:  sub64	r4,	0x0
+   115:  mov64	r2,	r2
+   116:  mov64	r2,	r9
+   117:  sub64	r4,	0x0
+   118:  mov64	r2,	r2
+   119:  and64	r2,	0xffff
+   120:  add64	r3,	0x0
+   121:  mov64	r3,	r10
+   122:  mov64	r2,	r2
+   123:  add64	r3,	0xffffffe4
+   124:  add64	r3,	r2
+   125:  mov64	r4,	r0
+   126:  add64	r3,	0x0
+   127:  add64	r4,	r2
+   128:  sub64	r4,	0x0
+   129:  ldxb	r4,	[r4+0x2]
+   130:  mov64	r2,	r2
+   131:  add64	r3,	0x0
+   132:  sub64	r4,	0x0
+   133:  ldxb	r3,	[r3+0x0]
+   134:  jne	r3,	r4,	+0xb	(jump to 145)
+   135:  mov64	r2,	r2
+   136:  add64	r9,	0x1
+   137:  jgt	r2,	0x6,	+0x8	(jump to 145)
+   138:  add64	r3,	0x0
+   139:  sub64	r4,	0x0
+   140:  mov64	r2,	r2
+   141:  mov64	r2,	r9
+   142:  mov64	r2,	r2
+   143:  add64	r3,	0x0
+   144:  and64	r2,	0xffff
+   145:  jgt	r1,	r2,	-0x20	(jump to 113)
+   146:  add64	r3,	0x0
+   147:  sub64	r4,	0x0
+   148:  mov64	r1,	r10
+   149:  sub64	r4,	0x0
+   150:  add64	r1,	0xffffffe4
+   151:  stxdw	[r10-0x40],	r1
+   152:  add64	r0,	0x2
+   153:  stxdw	[r10-0x38],	r0
+   154:  ldxh	r1,	[r8+0x0]
+   155:  mov64	r2,	r2
+   156:  stxdw	[r10-0x30],	r1
+   157:  and64	r9,	0xffff
+   158:  mov64	r2,	r2
+   159:  stxdw	[r10-0x28],	r9
+   160:  mov64	r2,	r2
+   161:  mov64	r3,	r10
+   162:  add64	r3,	0x0
+   163:  add64	r3,	0xffffffc0
+   164:  lddw	r1,	0x30
+   166:  add64	r3,	0x0
+   167:  mov64	r2,	0x34
+   168:  add64	r3,	0x0
+   169:  mov64	r2,	r2
+   170:  sub64	r4,	0x0
+   171:  mov64	r4,	0x20
+   172:  call	0xb1
+   173:  sub64	r4,	0x0
+   174:  ldxh	r1,	[r8+0x0]
+   175:  jne	r9,	r1,	+0x1	(jump to 176)
+   176:  mov64	r2,	r2
+   177:  sub64	r4,	0x0
+   178:  mov64	r7,	0x7
+   179:  jne	r9,	r1,	-0x82	(jump to 49)
+   180:  add64	r3,	0x0
+   181:  add64	r3,	0x0
+   182:  ldxdw	r1,	[r10-0x48]
+   183:  jeq	r1,	0x0,	-0x86	(jump to 49)
+   184:  ldxdw	r1,	[r10-0x50]
+   185:  mov64	r2,	r2
+   186:  add64	r3,	0x0
+   187:  mov64	r2,	r2
+   188:  ldxdw	r7,	[r1+0x0]
+   189:  ldxdw	r1,	[r10-0x58]
+   190:  add64	r3,	0x0
+   191:  add64	r7,	r1
+   192:  sub64	r4,	0x0
+   193:  mov64	r2,	r2
+   194:  mov64	r1,	0x10
+   195:  add64	r7,	r1
+   196:  mov64	r1,	r10
+   197:  mov64	r2,	r2
+   198:  mov64	r2,	r2
+   199:  mov64	r2,	r2
+   200:  add64	r1,	0xfffffff4
+   201:  mov64	r2,	0x2
+   202:  add64	r3,	0x0
+   203:  mov64	r3,	r7
+   204:  call	0x70
+   205:  ldxh	r1,	[r10-0xc]
+   206:  sub64	r4,	0x0
+   207:  sub64	r4,	0x0
+   208:  ldxh	r2,	[r10-0xa]
+   209:  add64	r2,	r1
+   210:  stxh	[r10-0xe],	r2
+   211:  sub64	r4,	0x0
+   212:  mov64	r2,	r10
+   213:  mov64	r2,	r2
+   214:  mov64	r2,	r2
+   215:  sub64	r4,	0x0
+   216:  add64	r2,	0xfffffff2
+   217:  add64	r3,	0x0
+   218:  mov64	r2,	r2
+   219:  sub64	r4,	0x0
+   220:  mov64	r1,	r7
+   221:  mov64	r3,	0x2
+   222:  call	0x24
+   223:  add64	r3,	0x0
+   224:  sub64	r4,	0x0
+   225:  sub64	r4,	0x0
+   226:  mov64	r2,	r2
+   227:  mov64	r2,	r10
+   228:  add64	r2,	0xfffffff8
+   229:  sub64	r4,	0x0
+   230:  add64	r3,	0x0
+   231:  lddw	r1,	0x0
+   233:  call	0x3
+   234:  mov64	r2,	r2
+   235:  add64	r3,	0x0
+   236:  add64	r3,	0x0
+   237:  mov64	r7,	0x0
+   238:  ja	-0xbd	(jump to 49)
+   239:  add64	r3,	0x0
+   240:  lsh64	r3,	0x20
+   241:  rsh64	r3,	0x20
+   242:  jge	r3,	r6,	-0x9f	(jump to 83)
+   243:  mov64	r2,	r2
+   244:  stxdw	[r10-0x68],	r4
+   245:  stxdw	[r10-0x60],	r2
+   246:  mov64	r2,	r2
+   247:  ldxdw	r1,	[r10-0x50]
+   248:  add64	r3,	0x0
+   249:  add64	r3,	0x0
+   250:  ldxdw	r7,	[r1+0x0]
+   251:  stxdw	[r10-0x48],	r3
+   252:  sub64	r4,	0x0
+   253:  mov64	r2,	r2
+   254:  add64	r3,	0x0
+   255:  add64	r7,	r3
+   256:  add64	r3,	0x0
+   257:  mov64	r3,	r7
+   258:  sub64	r4,	0x0
+   259:  mov64	r1,	0x10
+   260:  add64	r3,	r1
+   261:  mov64	r1,	r10
+   262:  add64	r1,	0xfffffff6
+   263:  sub64	r4,	0x0
+   264:  mov64	r2,	0x2
+   265:  call	0x70
+   266:  sub64	r4,	0x0
+   267:  mov64	r1,	0x13
+   268:  add64	r7,	r1
+   269:  add64	r3,	0x0
+   270:  mov64	r1,	r10
+   271:  add64	r1,	0xffffffe4
+   272:  mov64	r2,	0x8
+   273:  mov64	r3,	r7
+   274:  call	0x70
+   275:  mov64	r6,	0x0
+   276:  add64	r3,	0x0
+   277:  sub64	r4,	0x0
+   278:  sub64	r4,	0x0
+   279:  lsh64	r8,	0x20
+   280:  rsh64	r8,	0x20
+   281:  stxdw	[r10-0x58],	r8
+   282:  ja	-0xbb	(jump to 95)
+   283:  mov64	r2,	r2
+   284:  lddw	r7,	0xffffffff
+   286:  add64	r3,	0x0
+   287:  add64	r3,	0x0
+   288:  mov64	r0,	r7
+   289:  exit

@@ -1,0 +1,136 @@
+execve("./hello", ["./hello"], 0x7ffd0e0e9880 /* 8 vars */) = 0
+brk(NULL)                               = 0x55d5dd5cf000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+newfstatat(3, "", {st_mode=S_IFREG|0644, st_size=76774, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 76774, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f7c49b4b000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib64/libbpf.so.1", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+newfstatat(3, "", {st_mode=S_IFREG|0755, st_size=404752, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7c49b49000
+mmap(NULL, 367072, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f7c49aef000
+mmap(0x7f7c49afa000, 221184, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xb000) = 0x7f7c49afa000
+mmap(0x7f7c49b30000, 90112, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x41000) = 0x7f7c49b30000
+mmap(0x7f7c49b46000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x57000) = 0x7f7c49b46000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib64/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220:\2\0\0\0\0\0"..., 832) = 832
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+newfstatat(3, "", {st_mode=S_IFREG|0755, st_size=1881024, ...}, AT_EMPTY_PATH) = 0
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+mmap(NULL, 1908016, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f7c4991d000
+mmap(0x7f7c4993f000, 1372160, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x22000) = 0x7f7c4993f000
+mmap(0x7f7c49a8e000, 339968, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x171000) = 0x7f7c49a8e000
+mmap(0x7f7c49ae1000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1c4000) = 0x7f7c49ae1000
+mmap(0x7f7c49ae7000, 32048, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f7c49ae7000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib64/libelf.so.1", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+newfstatat(3, "", {st_mode=S_IFREG|0755, st_size=127528, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 111064, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f7c49901000
+mmap(0x7f7c49905000, 69632, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x4000) = 0x7f7c49905000
+mmap(0x7f7c49916000, 20480, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x15000) = 0x7f7c49916000
+mmap(0x7f7c4991b000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x19000) = 0x7f7c4991b000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib64/libz.so.1", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+newfstatat(3, "", {st_mode=S_IFREG|0755, st_size=100696, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 102824, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f7c498e7000
+mmap(0x7f7c498ea000, 57344, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x7f7c498ea000
+mmap(0x7f7c498f8000, 28672, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x11000) = 0x7f7c498f8000
+mmap(0x7f7c498ff000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x17000) = 0x7f7c498ff000
+close(3)                                = 0
+openat(AT_FDCWD, "/lib64/libzstd.so.1", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+newfstatat(3, "", {st_mode=S_IFREG|0755, st_size=779008, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 734072, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f7c49833000
+mmap(0x7f7c49838000, 630784, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x5000) = 0x7f7c49838000
+mmap(0x7f7c498d2000, 77824, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x9f000) = 0x7f7c498d2000
+mmap(0x7f7c498e5000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xb1000) = 0x7f7c498e5000
+close(3)                                = 0
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7c49831000
+arch_prctl(ARCH_SET_FS, 0x7f7c49832480) = 0
+set_tid_address(0x7f7c49832750)         = 26245
+set_robust_list(0x7f7c49832760, 24)     = 0
+rseq(0x7f7c49832da0, 0x20, 0, 0x53053053) = 0
+mprotect(0x7f7c49ae1000, 16384, PROT_READ) = 0
+mprotect(0x7f7c498e5000, 4096, PROT_READ) = 0
+mprotect(0x7f7c498ff000, 4096, PROT_READ) = 0
+mprotect(0x7f7c4991b000, 4096, PROT_READ) = 0
+mprotect(0x7f7c49b46000, 8192, PROT_READ) = 0
+mprotect(0x55d5dcc53000, 4096, PROT_READ) = 0
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7c4982f000
+mprotect(0x7f7c49b8e000, 8192, PROT_READ) = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+munmap(0x7f7c49b4b000, 76774)           = 0
+prlimit64(0, RLIMIT_MEMLOCK, {rlim_cur=524288*1024, rlim_max=524288*1024}, NULL) = 0
+getrandom("\x35\xeb\xcc\x6b\x93\x54\xd5\x1a", 8, GRND_NONBLOCK) = 8
+brk(NULL)                               = 0x55d5dd5cf000
+brk(0x55d5dd5f0000)                     = 0x55d5dd5f0000
+faccessat2(AT_FDCWD, "/proc/version_signature", R_OK, AT_EACCESS) = -1 ENOENT (No such file or directory)
+uname({sysname="Linux", nodename="kompot", ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0) = 0x7f7c49b5d000
+bpf(BPF_PROG_LOAD, {prog_type=BPF_PROG_TYPE_SOCKET_FILTER, insn_cnt=2, insns=0x7ffd41329550, license="GPL", log_level=0, log_size=0, log_buf=NULL, kern_version=KERNEL_VERSION(0, 0, 0), prog_flags=0, prog_name="", prog_ifindex=0, expected_attach_type=BPF_CGROUP_INET_INGRESS, prog_btf_fd=0, func_info_rec_size=0, func_info=NULL, func_info_cnt=0, line_info_rec_size=0, line_info=NULL, line_info_cnt=0, attach_btf_id=0, attach_prog_fd=0}, 116) = 3
+close(3)                                = 0
+bpf(BPF_PROG_LOAD, {prog_type=BPF_PROG_TYPE_SOCKET_FILTER, insn_cnt=2, insns=0x7ffd41329760, license="GPL", log_level=0, log_size=0, log_buf=NULL, kern_version=KERNEL_VERSION(0, 0, 0), prog_flags=0, prog_name="", prog_ifindex=0, expected_attach_type=BPF_CGROUP_INET_INGRESS, prog_btf_fd=0, func_info_rec_size=0, func_info=NULL, func_info_cnt=0, line_info_rec_size=0, line_info=NULL, line_info_cnt=0, attach_btf_id=0, attach_prog_fd=0, fd_array=NULL}, 144) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0\20\0\0\0\20\0\0\0\5\0\0\0\1\0\0\0\0\0\0\1"..., btf_log_buf=NULL, btf_size=45, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0000\0\0\0000\0\0\0\t\0\0\0\1\0\0\0\0\0\0\1"..., btf_log_buf=NULL, btf_size=81, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\08\0\0\08\0\0\0\t\0\0\0\0\0\0\0\0\0\0\1"..., btf_log_buf=NULL, btf_size=89, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0\f\0\0\0\f\0\0\0\7\0\0\0\1\0\0\0\0\0\0\20"..., btf_log_buf=NULL, btf_size=43, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0000\0\0\0000\0\0\0\t\0\0\0\1\0\0\0\0\0\0\1"..., btf_log_buf=NULL, btf_size=81, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0000\0\0\0000\0\0\0\5\0\0\0\0\0\0\0\0\0\0\1"..., btf_log_buf=NULL, btf_size=77, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0(\0\0\0(\0\0\0\5\0\0\0\0\0\0\0\0\0\0\1"..., btf_log_buf=NULL, btf_size=69, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0\f\0\0\0\f\0\0\0\10\0\0\0\1\0\0\0\0\0\0\23"..., btf_log_buf=NULL, btf_size=44, btf_log_size=0, btf_log_level=0}, 32) = 3
+close(3)                                = 0
+bpf(BPF_BTF_LOAD, {btf="\237\353\1\0\30\0\0\0\0\0\0\0\320\1\0\0\320\1\0\0\272\1\0\0\0\0\0\0\0\0\0\2"..., btf_log_buf=NULL, btf_size=930, btf_log_size=0, btf_log_level=0}, 32) = 3
+bpf(BPF_PROG_LOAD, {prog_type=BPF_PROG_TYPE_SOCKET_FILTER, insn_cnt=2, insns=0x7ffd41329460, license="GPL", log_level=0, log_size=0, log_buf=NULL, kern_version=KERNEL_VERSION(0, 0, 0), prog_flags=0, prog_name="libbpf_nametest"}, 64) = 4
+close(4)                                = 0
+bpf(BPF_MAP_CREATE, {map_type=BPF_MAP_TYPE_ARRAY, key_size=4, value_size=4, max_entries=1, map_flags=BPF_F_MMAPABLE, inner_map_fd=0, map_name="libbpf_mmap", map_ifindex=0, btf_fd=0, btf_key_type_id=0, btf_value_type_id=0, btf_vmlinux_value_type_id=0, map_extra=0}, 72) = 4
+close(4)                                = 0
+bpf(BPF_MAP_CREATE, {map_type=BPF_MAP_TYPE_ARRAY, key_size=4, value_size=32, max_entries=1, map_flags=0, inner_map_fd=0, map_name="libbpf_global", map_ifindex=0, btf_fd=0, btf_key_type_id=0, btf_value_type_id=0, btf_vmlinux_value_type_id=0, map_extra=0}, 72) = 4
+bpf(BPF_PROG_LOAD, {prog_type=BPF_PROG_TYPE_SOCKET_FILTER, insn_cnt=5, insns=0x7ffd41329420, license="GPL", log_level=0, log_size=0, log_buf=NULL, kern_version=KERNEL_VERSION(0, 0, 0), prog_flags=0, prog_name="", prog_ifindex=0, expected_attach_type=BPF_CGROUP_INET_INGRESS, prog_btf_fd=0, func_info_rec_size=0, func_info=NULL, func_info_cnt=0, line_info_rec_size=0, line_info=NULL, line_info_cnt=0, attach_btf_id=0, attach_prog_fd=0, fd_array=NULL}, 144) = 5
+close(4)                                = 0
+close(5)                                = 0
+bpf(BPF_MAP_CREATE, {map_type=BPF_MAP_TYPE_ARRAY, key_size=4, value_size=20, max_entries=1, map_flags=BPF_F_RDONLY_PROG, inner_map_fd=0, map_name="hello_bp.rodata", map_ifindex=0, btf_fd=3, btf_key_type_id=0, btf_value_type_id=20, btf_vmlinux_value_type_id=0, map_extra=0}, 72) = 4
+bpf(BPF_MAP_UPDATE_ELEM, {map_fd=4, key=0x7ffd4132954c, value=0x7f7c49b5d000, flags=BPF_ANY}, 32) = 0
+bpf(BPF_MAP_FREEZE, {map_fd=4}, 4)      = 0
+bpf(BPF_PROG_LOAD, {prog_type=BPF_PROG_TYPE_TRACEPOINT, insn_cnt=6, insns=0x55d5dd5d0f00, license="GPL", log_level=0, log_size=0, log_buf=NULL, kern_version=KERNEL_VERSION(6, 1, 31), prog_flags=0, prog_name="tracepoint__sys", prog_ifindex=0, expected_attach_type=BPF_CGROUP_INET_INGRESS, prog_btf_fd=3, func_info_rec_size=8, func_info=0x55d5dd5cf680, func_info_cnt=1, line_info_rec_size=16, line_info=0x55d5dd5cf6a0, line_info_cnt=2, attach_btf_id=0, attach_prog_fd=0, fd_array=NULL}, 144) = 5
+bpf(BPF_MAP_CREATE, {map_type=BPF_MAP_TYPE_ARRAY, key_size=4, value_size=32, max_entries=1, map_flags=0, inner_map_fd=0, map_name="libbpf_det_bind", map_ifindex=0, btf_fd=0, btf_key_type_id=0, btf_value_type_id=0, btf_vmlinux_value_type_id=0, map_extra=0}, 72) = 6
+bpf(BPF_PROG_LOAD, {prog_type=BPF_PROG_TYPE_SOCKET_FILTER, insn_cnt=2, insns=0x7ffd41328c60, license="GPL", log_level=0, log_size=0, log_buf=NULL, kern_version=KERNEL_VERSION(0, 0, 0), prog_flags=0, prog_name="", prog_ifindex=0, expected_attach_type=BPF_CGROUP_INET_INGRESS, prog_btf_fd=0, func_info_rec_size=0, func_info=NULL, func_info_cnt=0, line_info_rec_size=0, line_info=NULL, line_info_cnt=0, attach_btf_id=0, attach_prog_fd=0, fd_array=NULL}, 144) = 7
+bpf(BPF_PROG_BIND_MAP, 0x7ffd41328bb0, 12) = 0
+close(6)                                = 0
+close(7)                                = 0
+bpf(BPF_PROG_BIND_MAP, 0x7ffd41328c90, 12) = 0
+faccessat2(AT_FDCWD, "/sys/kernel/debug/tracing", F_OK, AT_EACCESS) = 0
+openat(AT_FDCWD, "/sys/kernel/debug/tracing/events/syscalls/sys_enter_execve/id", O_RDONLY) = 6
+newfstatat(6, "", {st_mode=S_IFREG|0440, st_size=0, ...}, AT_EMPTY_PATH) = 0
+read(6, "807\n", 4096)                  = 4
+read(6, "", 4096)                       = 0
+close(6)                                = 0
+perf_event_open({type=PERF_TYPE_TRACEPOINT, size=0x88 /* PERF_ATTR_SIZE_??? */, config=807, sample_period=0, sample_type=0, read_format=0, precise_ip=0 /* arbitrary skid */, ...}, -1, 0, -1, PERF_FLAG_FD_CLOEXEC) = 6
+bpf(BPF_PROG_LOAD, {prog_type=BPF_PROG_TYPE_TRACEPOINT, insn_cnt=2, insns=0x7ffd413294f0, license="GPL", log_level=0, log_size=0, log_buf=NULL, kern_version=KERNEL_VERSION(0, 0, 0), prog_flags=0, prog_name="", prog_ifindex=0, expected_attach_type=BPF_CGROUP_INET_INGRESS, prog_btf_fd=0, func_info_rec_size=0, func_info=NULL, func_info_cnt=0, line_info_rec_size=0, line_info=NULL, line_info_cnt=0, attach_btf_id=0, attach_prog_fd=0, fd_array=NULL}, 144) = 7
+bpf(BPF_LINK_CREATE, {link_create={prog_fd=7, target_fd=-1, attach_type=BPF_PERF_EVENT, flags=0, perf_event={bpf_cookie=0}}}, 48) = -1 EBADF (Bad file descriptor)
+close(7)                                = 0
+bpf(BPF_LINK_CREATE, {link_create={prog_fd=5, target_fd=6, attach_type=BPF_PERF_EVENT, flags=0, perf_event={bpf_cookie=0}}}, 48) = 7
+ioctl(6, PERF_EVENT_IOC_ENABLE, 0)      = 0
+openat(AT_FDCWD, "/sys/kernel/debug/tracing/trace_pipe", O_RDONLY) = 8
+read(8, "           <...>-26246   [002] d"..., 4095) = 89
+newfstatat(1, "", {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x4), ...}, AT_EMPTY_PATH) = 0
+write(1, "           <...>-26246   [002] d"..., 88) = 88
+write(1, "\n", 1)                       = 1
+write(1, "\n", 1)                       = 1
+read(8, "        i3blocks-26246   [001] d"..., 4095) = 89
+write(1, "        i3blocks-26246   [001] d"..., 89) = 89
+write(1, "\n", 1)                       = 1
+read(8, strace: Process 26245 detached
+ <detached ...>
+Interrupt
