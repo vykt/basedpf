@@ -2,7 +2,7 @@
 
 TESTING THE EXECUTABLE
 
-If you would like to mutate an eBPF program yourself and view the results, follow these steps. Yes, this is very painful but there are no other tools available and the researcher unfortunately did not have the time to automate this.
+This guide will walk you through mutating the included eBPF programs by yourself. Yes, this is very painful but there are no other tools available and the researcher unfortunately did not have the time to automate this.
 
 To run these tests you must install ebpf-disasm v1.0 available here:
 https://github.com/badboy/ebpf-disasm

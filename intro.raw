@@ -28,7 +28,7 @@ A more severe limitation of eBPF rootkits is their vulnerability to signature sc
 
 
  --- objectives
-This project will aim to explore the viability of bytecode mutation of eBPF programs in userspace for the purpose of changing the resulting signatures present in the kernel. To provide a more complete solution, strategies for hiding the mutator itself will also be covered. To minimise the risk of abuse, no offensive capabilities will be designed or implemented, with all research focus on defensive measures.
+This project will aim to explore the viability of bytecode mutation of eBPF programs in userspace for the purpose of changing the resulting signatures present in the kernel. To provide a more complete solution, strategies for hiding the mutator itself will also be covered. To minimise the risk of abuse, no offensive capabilities will be designed or implemented, with all research focus on defensive measures. The researcher is conscious of the scale of the project, and as such a substantial number of objectives focus on design, with only the critical components targeting implementation.
 
 
 1)  Implement a mutation algorithm capable of outputting eBPF bytecode that when compiled
@@ -36,17 +36,22 @@ This project will aim to explore the viability of bytecode mutation of eBPF prog
 
         -Functional native instructions
         
-        -Native instructions that vary enough to make conventional signatures ineffective
-
-    Success measures:
+        -Native instructions that vary substantially enough to make conventional 
+         signatures ineffective
 
         -Does the eBPF program still run as expected? If it can't be executed, can it 
          be proven that the eBPF program would execute as expected?
 
-        -When taking hashes of the mutated output, how common are collisions?
 
 
-2)  Design a new system for deployment of eBPF programs that carries out bytecode 
+2)  Design and implement substantial feature(s) relating to rootkit obfuscation:
+        
+        -Can the rootkit conceal itself from the filesystem and process listings? Is it 
+         hidden from the output of filesystem and process monitoring utilities?
+ 
+
+
+3)  Design a new system for deployment of eBPF programs that carries out bytecode 
     mutation. Implement critical components.
 
     Success measures:
@@ -58,10 +63,7 @@ This project will aim to explore the viability of bytecode mutation of eBPF prog
          Can they be practically implemented?
 
         -Is the deployment system realistic? Is it too cumbersome to be used 
-         in practice? Is this system devoid of needless complexity?
-
-        -Does the implementation of critical components function correctly?
-
+         in practice? Is the system devoid of needless complexity?
 
 
  --- reason for choice of project

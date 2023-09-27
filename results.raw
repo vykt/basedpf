@@ -14,15 +14,19 @@ The results section of the report is broken down into the three main components 
 
 -The eBPF program
 
--The eBPF loader
+-The eBPF loaders
 
 Fore each of the three components, implemenetation details and nuances will be briefly discussed. Tests suitable for the objectives defined in the introduction will also be covered on a per-component basis.
 
 
  --- mutator
-The sourcecode for the mutator implementation can be found in [SOURCECODE APPENDIX]. The implementation for the most part follows the design defined in the methods section. The most important difference is in the implementation of the main mutation algorithm. The original algorithm did not detail the process of random number generation and how it would affect the algorithm. It became evident during implementation that a method to evenly distribute the NOP instructions throughout the program in an efficient manner was necessary.
+The sourcecode for the mutator implementation can be found in [SOURCECODE APPENDIX]. The implementation for the most part follows the design defined in the methods section. For the reader's convenience, the diagram of the design is repeated in (MUTATOR DESIGN FIGURE) The most important difference is in the implementation of the main mutation algorithm. The original algorithm did not detail the process of random number generation and how it would affect the algorithm. It became evident during implementation that a method to evenly distribute the NOP instructions throughout the program in an efficient manner was necessary.
 
-The devised solution utilised a Gaussian distribution. Every time the algorithm decides to inject NOPs at a given instruction, the number of instructions injected is a random numer distributed on this Gaussian distribution. The mean of the distribution is calculated by taking into account the user-defined rate of injection, as well as the available mutation space. For example, if the algorithm is configured to inject on average at every second instruction, and the program is allowed to double in size, the mean of the distribution will be 2.0. The full formula for the mean is seen below:
+(INSERT MUTATOR DESIGN FIGURE)
+
+At first a linear conguential generator was proposed to be used (the sources for it can still be found in the appendix). It was limiting because a seed consisting of time is alone insufficient. It also does not fit well into the C++ standard library, which has excellent utilities attached to its RNG engines. Halfway through the first round of implemetation, it was realised that a non-uniform NOP distribution is preferable. Implementing such a distribution is a rather unnecessary time sink. As such, it was abandoned in favour of a standard library implementation.
+
+A new solution was devised that utilised a Gaussian distribution. Every time the algorithm decides to inject NOPs at a given instruction, the number of instructions injected is a random numer distributed on this Gaussian distribution. The mean of the distribution is calculated by taking into account the user-defined rate of injection, as well as the available mutation space. For example, if the algorithm is configured to inject on average at every second instruction, and the program is allowed to double in size, the mean of the distribution will be 2.0. The full formula for the mean is seen below:
 
     a = available space for the program, measured in instructions
     b = number of instructions in the original program
@@ -37,18 +41,18 @@ Only 3 of the 50 NOP instructions are utilised by the mutator. Adding additional
 
 Finally, the mutator generates an addition meta information file that stores information about all injections that took place. The file uses a simple binary format. Entries follow each other with no padding with the following format:
 
-    <x,y><x,y><x,y>
+    <x_0,y_0><x_1,y_1>...<x_n,y_n>
 
 Where x is the instruction index of the injection, and y is the number of injected instructions. In theory this can be used to reverse the mutation, producing the original binary. Should the rootkit choose to store itself in an unencrypted format, storing mutated binaries only in tandem with these meta information files can be used as an obfuscation measure.
 
 
-Before we begin testing, it must be mentioned that due to the incomplete implementation of the eBPF loader, it is not possible to load the mutated bytecode. Nontheless, ebpf-disasm throws errors upon encountering invalid instructions. As such, at the bare minimum it can be known with certainty that the mutated bytecode is not corrupted. By observing the disassembled bytecode it can be presumed that will execute correctly, but that is not sufficient proof of course.
+Before we begin testing, it must be mentioned that due to the incomplete implementation of the eBPF loader, it is not possible to load the mutated bytecode. Nontheless, ebpf-disasm throws errors upon encountering invalid instructions. As such, at the bare minimum it can be known with certainty that the mutated bytecode is not corrupted. By observing the disassembled bytecode it can be presumed that it will execute correctly, but that is not sufficient proof of its runtime legibility of course.
 
 We will now consider each relevant objective and apply the tests necessary for their satisfaction. Where deemed necessary, additional tests are performed. Evaluation will be based on [APPENDIX MUTATED 1 & 2]. [APPENDIX MUTATED 1] showcases the disassembly of the 2 original eBPF programs implemented by this project. [APPENDIX MUTATED 2] showcases the disassembly of mutated instances of both of these programs.
 
 1) Functional native instructions:
 
-The researcher has sufficient reason to believe the instructions are valid. The researcher manually disassembled the mutated programs using hexdumps. Highlights of one such instance can be seen in (FIGURE DISASM MUTATION). Additionally, the fact that ebpf-disasm disassembles the mutated programs without error adds some third-party validity to te process. Additionally, updating offsets is performed correctly. This is perhaps as close to a proof as the researcher is able to get without a working loader.
+The researcher has sufficient reason to believe the instructions are valid. The researcher manually disassembled the mutated programs using hexdumps. Highlights of one such instance can be seen in (FIGURE DISASM MUTATION). Additionally, the fact that ebpf-disasm disassembles the mutated programs without error adds some third-party validity to the process. Additionally, updating offsets is performed correctly. This is perhaps as close to a proof as the researcher is able to get without a working loader.
 
 (INSERT FIGURE OF DISASSEMBLY OF MUTATIONS)
 
@@ -57,8 +61,92 @@ The reader is encouraged to try mutating and disassembling the eBPF programs imp
 
 2) Native instructions that vary enough to make conventional signatures ineffective:
 
-With only 3 NOP instructions the randomness leaves much to be desired, however any practical implementation could very easily extend the NOP array to include all 50 NOP instructions. Paired with the use of a Gaussian distribution the randomness produced would be excellent.
+With our placeholder 3 NOP instructions the randomness leaves much to be desired, however any practical implementation could very easily extend the NOP array to include all 50 NOP instructions. Paired with the use of a Gaussian distribution the randomness produced would be excellent.
+
+
+To the researcher's knowledge, the produced mutator is the first instance of eBPF bytecode mutation. Even better, the designed goal of achieving non-oligomorphic mutation has been sternly met. Achieving a working system was made substantially more difficult by the immaturity of the available tooling. A shining example of this is the very luckily available, but also rather cumbersome ebpf-disasm, which can only disassemble sections of ELF files but not object files. Given how hostile ELF files are to mutation and especially section expansion, hacking together borderline-valid ELF files with the mutated bytecode for ebpf-disasm to disassemble was ambitious (do see [APPENDIX ON HOWTO MUTATE]). The process forced the researcher to become accustomed rather closely with the hexadecimal representation of eBPF bytecode, components of which are not byte (or nibble) aligned and can therefore be challenging to read by eye.
+
 
 
 
  --- eBPF programs
+The sourcecode for the eBPF programs can be found in [APPENDIX FOR eBPF PROGRAMS]. Once again, the implementation follows the design discussed in the methods section of this document. The design diagram for the eBPF programs is repeated in (FIGURE EBPF PROGRAM DESIGN). It should be noted that the eBPF programs come with a placeholder loader that utilises libbpf. Unfortunately, this placeholder loader can't be utilised to load the mutated bytecode generated by our mutator because it uses ELF files embedded in the loader at compile time. We will discuss ELF mutation during loader implementation. 
+
+(INSERT EBPF PROGRAM DESIGN)
+
+The eBPF programs work together to capture linux_dirent64 buffers and overwrite their contents where appropriate. During development a substantial simplification was revealed to be feasible. pathtofile's implementation utilised tail calls to bypass stack and instruction limits imposed on eBPF programs (REFERENCE PATHTOFILE). This introduces substantial complexity in the form of additional eBPF maps to store program file descriptors, as well as a more complex execution flow. For instance, state has to be restored from an eBPF map while in the middle of processing a buffer. It was discovered that even with up to directory entries to process (and therefore 512 iterations), the eBPF program never runs out of instructions and as such can be verified by the eBPF verifier.
+
+Just like the mutator executable, the eBPF programs can be configured to change the target files of process IDs they intend to hide. In the case of eBPF programs, this is achieved by modifying the constant globals at the top of the eBPF source file. We now continue to look at the objectives relevant to the implementation of eBPF programs. 
+
+
+1) Can the rootkit conceal itself from the filesystem, process listings and logs?
+
+File system obfuscation works as intended with the eBPF programs successfully hiding both files and directories on the file system. In (FIGURE eBPF HIDING FILES), the eBPF program is compiled to hide the 'rootkit' and 'uwudir' directory entries. During the first call to ls, the eBPF programs are not loaded and both 'rootkit' and 'uwudir' entries appear in the output. During the second call, eBPF programs are loaded and attached. This time both target files do not appear. Lastly, before the third call to ls an interrupt causes the loader process to die, thereofore removing all references to the loaded eBPF programs causing them to become unloaded. This call to ls once again displays the target files. The eBPF programs function exactly as intended.
+
+(INSERT FIGURE eBPF HIDING FILES)
+
+Unlike file obfuscation, process obfuscation does not function. Following the same procedure as in the file obfuscation test, the meow process can be seen in the output of ps during each call. The intended result is for it to be concealed during the second call alike in the previous test (FIGURE eBPF HIDING PID). Despite observing debug output, the exact reason for these errors is unclear. Debug information suggests the name fields returned from directory entries of /procfs do not follow stardard conventions, however the fact that pathtofile's implementation (PATHTOFILE REFERENCE) functions suggests a failure on the part of the researcher's implementation.
+
+(INSERT FIGURE eBPF HIDING PID)
+
+
+The produced eBPF programs partially meet the outlined goals, meeting the filesystem but not the process monitoring requirements. In the case of filesystem obfuscation, this implementation substantially improves on the flexibility and robustness of existing implementations bar the ebpfkit rootkit (EBPFKIT REFERENCE). 
+
+
+
+ --- loader
+Finally, we move on to loader implementations. The raw system call implementation was developed first due to its lightweight nature and lack of complexity. The implementation followed the design defined in the methods section. For the reader's convenience, the design diagram is repeated in (INSERT RAW LOADER DESIGN DIAGRAM). The sources for the raw system call loader can be found in [APPENDIX LOADER RAW SRC]. The loader operates on a placeholder hello world eBPF program that outputs "hello world" whenever the getdents64 system call is called. Despite the simplicity, the placeholder program utilises all load-relevant features that the implemented eBPF programs covered previously use.
+
+(INSERT RAW LOADER DESIGN DIAGRAM)
+
+Upon executing the loader, the eBPF program is successfully loaded and attached to the getdentds64 syscall. (RAW LOADER RUN FIGURE) showcases this process. In the figure, the raw syscall loader successfully loads and attaches the placeholder eBPF program. Upon running ls (which calls getdents64), nothing is printed to the screen in the loader. The loader should output "hello world" instead. To confirm whether the eBPF program was indeed loaded successfully, bpttool can be used. Requesting a list of loaded programs shows that the program is indeed loaded and attached, as evident by the "tracepoint" part of the output. To double check that this is the expected output for bpftool, a placeholder loader was used from the previous implementation section. The outputs do match, which means the program is successfully loaded (RAW LOADER CMP FIGURE).
+
+(INSERT RAW LOADER RUN FIGURE)
+
+(INSERT RAW LOADER CMP FIGURE)
+
+eBPF does not support any kind of runtime debugging, leaving the researcher ultimately unsure of the root cause of this problem. One suggestion that will be explored shortly is that eBPF call instructions may need to be patched at load time. The scarcity of documentation leaves this speculation unanswered.
+
+
+The lack of success with a raw syscall loader implementation lead to an attempt at implementing a libbpf loader. This implementation is by no means conventional. As mentioned previously, libbpf loaders embed an ELF file inside them at compile time. As such, the initial design of (LIBBPF LOAD FIGURE DESIGN) must be modified to permit the implemented mutator to act on the ELF file.
+
+(INSERT LIBBPF LOAD FIGURE DESIGN)
+
+eBPF programs reside inside specific sections of an eBPF ELF file. As demonstrated previously, eBPF ELF files are tightly packed and do not leave any free space in their sections for mutation. Expanding embedded ELF files dynamically is more complicated than this entire project. As such, an alternative approach was chosen. Once the target eBPF program is compiled into an eBPF ELF, said ELF file is manually edited to make space for mutation. The mutator implementation can be configured to not exceed the free space available, offering excellent integration into this solution.
+
+During design the rabin2 utility was mentioned for its ability to resize ELF files. During implementations it was discovered that this feature of rabin2 is broken. An alternative approach was devised. Defining a long string constant at the top of the eBPF source file causes the compiler to place this string in the .rodata section, effectively inflating the size of te .rodata section. Conveniently this section follows the section holding the eBPF program. The .rodata section can now be patched to have rwx permissions, allowing the eBPF program to expand into the .rodata section. It is important to note that the eBPF program must not expand past the end of the filler constant string, as the .rodata section contains other valid data that must not be overwritten. (ELF LIBBPF DIAGRAM) visualises this process. 
+
+(INSERT ELF LIBBPF DIAGRAM)
+
+This approach looked promising at first. The real implementation would need to store multiple eBPF programs in the same ELF file. Sections of eBPF programs typically follow each other. To make space for mutation however, the second eBPF program and onwards would have to be moved forward to leave space for the previous eBPF program(s) to mutate. If a file containing more than one program is passed to libbpf to embed, running the loader causes an error stating the .reloff section contains invalid data. The researcher is not familiar with the functionality of the .reloff section for eBPF programs, or what precisely the compiler writes to the .reloff section. The researcher speculates that the call instructions may require patching at load time, however this is based purely on intuition. The lack of available time ultimately lead to a failure to implement a libbpf loader.
+
+We now consider the success criteria relating to the design and implementation of eBPF program loaders:
+
+1) Do all the components of the deployment system work together in theory? Can they be practically implemented?
+
+The raw system call loader works correctly implements eBPF map creation and partially correct eBPF program loading. The entire theorised system has been implemented. The attempt at implementing an eBPF loader does not work, however it is a far less favourable method as will be discussed in the next point.
+
+
+2) Is the deployment system realistic? Is it too cumbersome to be used in practice? Is the system devoid of needless complexity?
+
+The raw system call loader is very lightweight and performs loading of bytecode the "intended" way. The same can't be said for libbpf loaders which, given the existence of syscall loaders, carry substantial unnecessary complexity. Should any further development take place, it should certainly focus on the raw systemcall loader. 
+
+
+
+ --- summary
+Objectives for this project covered both implementation and design. To conclude this section we evaluate the broader design of the project against the remaining objectives.
+
+1) What does the target system need to have present besides an eBPF enabled kernel?
+
+Assuming the use of a system call loader, the target system does not require anything besides an eBPF enabled kernel. The only potential additional requirement is for kernel tracepoints to be enabled in the kernel as the eBPF programs expect to attach to syscall tracepoints. This is very likely to already be the case on an eBPF enabled system. In this regard, the design performs an excellent job of maximising this project's coverage of eBPF enabled systems.
+
+2) Do all components of the deployment system work together in theory?
+
+The output of the mutator implementation can be fed directly into the raw syscall loader as both respectively produce and expect eBPF object files. The implemented eBPF programs if extracted from their placeholder loader ELF file with ebpf-disasm can be fed directly into the raw syscall loader.  As intended during the design stage, the different components interface with perfect compatibility. It should be noted here that while unlikely, the fixes necessary to make the raw syscall loader function may break this compatibility, or more likely necessitate a thin compatibility layer.
+
+
+ --- conclusion
+
+Implementation success is summarised in (SUCCESS CHART FIGURE).
+
+ (INSERT SUCCESS CHART FIGURE)
