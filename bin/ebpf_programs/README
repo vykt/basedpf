@@ -1,0 +1,5 @@
+This executable is preconfigured to hide directory entries matching:
+
+    "rootkit" OR "12345" 
+
+To change the names of hidden files, please compile from source.

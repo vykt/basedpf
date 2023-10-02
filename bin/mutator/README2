@@ -1,0 +1,76 @@
+This guide will walk you through mutating the included eBPF programs by yourself. 
+This is indeed very painful but there are no other tools available and automating 
+this is a project in and of itself. To run these tests you must install 
+ebpf-disasm v1.0 available here:
+
+    https://github.com/badboy/ebpf-disasm
+
+
+1) Extract either the sys_enter_getdents64 or sys_exit_getdents64 eBPF program from 
+the libbpf loader. Extract both the bytecode and the disassembled instructions:
+
+    $ ebpf-disasm -b -s "tracepoint/syscalls/sys_enter_getdents64" ./hide.bpf.o > ./prog.bpf.o
+    $ ebpf-disasm -n -s "tracepoint/syscalls/sys_enter_getdents64" ./hide.bpf.o > ./prog.insns
+
+OR
+
+    $ ebpf-disasm -b -s "tracepoint/syscalls/sys_exit_getdents64" ./hide.bpf.o > ./prog.bpf.o
+    $ ebpf-disasm -n -s "tracepoint/syscalls/sys_exit_getdents64" ./hide.bpf.o > ./prog.insns
+
+
+2) Move the prog.bpf.o file to the same directory as the mutator executable. The 
+name of the eBPF program MUST be prog.bpf.o. Also move the disassembled instructions.
+
+    $ mv ./prog.bpf.o ~/your/mutator/directory
+    $ mv ./prog.insns ~/your/mutator/directory
+
+
+3) Run the mutator. This will produce prog.new.bpf.o (mutated program) and 
+prog.new.metainf (mutation metainfo)
+
+    $ ./mutator
+
+
+ebpf-disasm only works with ELF files. There are no other disassemblers. The next 
+step is to create a mock ELF file containing the mutated eBPF program.
+
+4) Write the newly mutated eBPF program into the mock ELF file:
+
+    $ dd if=./prog.new.bpf.o of=./NEWELF.o bs=1 seek=696 oflag=seek_bytes
+
+
+5) Section headers must be updated for ebpf-disasm to recognise the newly written 
+program. First, get the size of the mutated program in hexadecimal.
+
+    $ printf "0x%x\n" `du -b ./prog.new.bpf.o | awk '{print $1}'`
+
+
+6) Open the mock ELF file in a hexeditor of your choice and seek to 0x1D0.
+
+    $ hexedit ./NEWELF.o
+
+7) Change the value 0x40 to 0x2B8 in LITTLE ENDIAN. It should look like this:
+
+    0x40 0x00 0x00 0x00  ->  0xB8 0x02 0x00 0x00
+
+8) Seek to 0x1D8. Change the value 0x58 to the size of the mutated eBPF program 
+obtained in step 5:
+
+    0x58 0x00 0x00 0x00  ->  <MUTATED eBPF PROGRAM SIZE (IN HEX)>
+    
+    e.g.:
+    
+    0x58 0x00 0x00 0x00  ->  0x08 0x09 0x00 0x00
+
+
+9) Congratulate yourself, the hard part is done. Finally, extract the 
+disassembled instructions for the mutated eBPF program:
+
+    $ ebpf-disasm -n -s ".text" ./NEWELF.o > ./prog.new.insns
+
+
+10) Feel free to look at the disassembled instructions for both the mutated 
+and original eBPF program:
+
+$ cat ./prog.insns
+$ cat ./prog.new.insns

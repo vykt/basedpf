@@ -1,0 +1,40 @@
+SETUP:
+
+- Edit the 'target0' and target1' string literals at the top of main to
+  set your target files that you desire to hide. By default, they are set 
+  to 'rootkit' and '12345'.
+
+    $ sed -i 's/"rootkit"/"your_string"/g' ./hide.c
+    $ sed -i 's/"12345"/"your_other_string"/g' ./hide.c
+
+- Create your target files. Remember, the very first file in a directory 
+  can't be hidden.
+
+    $ touch your_string
+    $ mkdir your_other_string
+
+
+BUILD:
+
+1) Generate a header for your running kernel with bpftool:
+
+    $ make init
+
+2) Build the eBPF program:
+
+    $ make bpf
+
+3) Allow libbpf to embed the compiled eBPF program:
+
+    $ make skel
+
+4) Build the placeholder loader:
+
+    $ make usr
+
+
+RUN:
+
+- Nothing special:
+
+    ./hide

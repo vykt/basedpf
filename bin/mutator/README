@@ -1,0 +1,8 @@
+Follow the instructions in README2 to understand how to interpret the 
+output of the mutator. For the sake of immediate testing, an object file 
+containing the sys_enter_getdents64 eBPF program bytecode is included in 
+this directory. 
+
+- To execute the mutator, simply run it:
+
+    $ ./mutator

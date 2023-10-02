@@ -1,0 +1,21 @@
+This file will walk you through building and running the eBPF mutator. The 
+mutator operates on eBPF bytecode objects named "prog.bpf.o".
+
+
+BUILD:
+
+- Simply call make
+
+    $ make
+
+
+RUN:
+
+Follow the instructions in README2 to understand how to interpret the 
+output of the mutator. For the sake of immediate testing, an object file 
+containing the sys_enter_getdents64 eBPF program bytecode is included in 
+this directory. 
+
+- To execute the mutator, simply run it:
+
+    $ ./mutator

@@ -1,5 +1,0 @@
-01_detecting_kernel_rootkits
-
-DIFFICULT COUNTERMEASURES: 
-
--people walking through kmem in steps of 4 looking for modified function ptr addresses

@@ -1,0 +1,4 @@
+This directory stores the eBPF bytecode object files before and after mutation.
+
+The directory ../disasm_txt stores the disassembly of the eBPF bytecode object 
+files stored in this directory.

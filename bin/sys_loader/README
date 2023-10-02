@@ -1,0 +1,4 @@
+This executable is precompiled to load the prog.o eBPF bytecode object.
+You may not try your own eBPF object files as their requirements differ.
+For example, eBPF programs utilising eBPF maps must receive a map array 
+from the loader.

@@ -1,0 +1,17 @@
+This system call loader is tailored to load the eBPF program located in the 
+prog.o eBPF bytecode object. Because it is tailored, it is not possible to 
+load arbitrary eBPF programs as their requirements differ.
+
+
+BUILD:
+
+- Build the system call loader
+
+    $ make usr
+
+
+RUN:
+
+- Regular execution:
+
+    ./hide
