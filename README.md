@@ -7,7 +7,7 @@ Created by a CUoL student, ID: 210059011
 
 ### ABOUT:
 
-BasedPF is a master's thesis on the implementation of eBPF bytecode mutation for the purpose of signature evasion, as is commonly found with conventional malware compiled into native architecture assembly.
+BasedPF is a master's thesis on the implementation of eBPF bytecode mutation. The project introduces an algorithm for mutating any eBPF program. The repository also contains an unfinished deployment toolchain.
 
 
 ### CONTENTS OF THIS REPOSITORY:
